@@ -5,8 +5,8 @@ import {
   HERO_FRAME_0,
   HERO_IDLE_ANIM,
   HERO_WALK_ANIM,
-  MONSTER_FRAME_0,
-  MONSTER_IDLE_ANIM,
+  getMonsterFrame0Key,
+  getMonsterIdleAnimKey,
 } from './spriteSheet'
 
 type EnemyVisual = {
@@ -17,6 +17,7 @@ type EnemyVisual = {
 }
 
 export class DungeonVisualSystem {
+  private static readonly VISION_RADIUS = 3
   private playerSprite?: Phaser.GameObjects.Sprite
   private playerHpBg?: Phaser.GameObjects.Rectangle
   private playerHpFill?: Phaser.GameObjects.Rectangle
@@ -31,6 +32,7 @@ export class DungeonVisualSystem {
   private enemyVisuals = new Map<string, EnemyVisual>()
   private potionVisuals = new Map<string, Phaser.GameObjects.Arc>()
   private goldVisuals = new Map<string, Phaser.GameObjects.Arc>()
+  private fogTiles = new Map<string, Phaser.GameObjects.Rectangle>()
 
   constructor(private readonly scene: Phaser.Scene) {}
 
@@ -81,6 +83,8 @@ export class DungeonVisualSystem {
     this.enemyVisuals.clear()
     this.potionVisuals.clear()
     this.goldVisuals.clear()
+    this.fogTiles.forEach((tile) => tile.destroy())
+    this.fogTiles.clear()
 
     this.wallGroup = this.scene.add.group()
     this.enemyGroup = this.scene.add.group()
@@ -150,10 +154,10 @@ export class DungeonVisualSystem {
       const sprite = this.scene.add.sprite(
         enemy.pos.x * TILE + TILE / 2,
         enemy.pos.y * TILE + TILE / 2,
-        MONSTER_FRAME_0,
+        getMonsterFrame0Key(enemy.monsterTypeId),
       )
       sprite.setDisplaySize(30, 30)
-      sprite.play(MONSTER_IDLE_ANIM)
+      sprite.play(getMonsterIdleAnimKey(enemy.monsterTypeId))
       this.enemyGroup.add(sprite)
 
       const ratio = clamp(enemy.hp / enemy.maxHp, 0.08, 1)
@@ -196,7 +200,9 @@ export class DungeonVisualSystem {
       )
     }
 
+    this.createFogLayer()
     this.updatePlayerHpBar(run)
+    this.updateVision(run)
   }
 
   consumePotionVisual(pos: Pos) {
@@ -333,6 +339,22 @@ export class DungeonVisualSystem {
     }
   }
 
+  updateVision(run: RunState) {
+    const radius = DungeonVisualSystem.VISION_RADIUS
+    const radiusSq = radius * radius
+    for (let y = 0; y < MAP_H; y++) {
+      for (let x = 0; x < MAP_W; x++) {
+        const fog = this.fogTiles.get(keyOf({ x, y }))
+        if (!fog) continue
+
+        const dx = x - run.player.x
+        const dy = y - run.player.y
+        const inSight = dx * dx + dy * dy <= radiusSq
+        fog.setAlpha(inSight ? 0 : 1)
+      }
+    }
+  }
+
   getPlayerSprite() {
     return this.playerSprite
   }
@@ -344,6 +366,23 @@ export class DungeonVisualSystem {
   killPlayerTweens() {
     if (this.playerSprite) {
       this.scene.tweens.killTweensOf(this.playerSprite)
+    }
+  }
+
+  private createFogLayer() {
+    for (let y = 0; y < MAP_H; y++) {
+      for (let x = 0; x < MAP_W; x++) {
+        const fog = this.scene.add.rectangle(
+          x * TILE + TILE / 2,
+          y * TILE + TILE / 2,
+          TILE + 1,
+          TILE + 1,
+          0x000000,
+          1,
+        )
+        fog.setDepth(30)
+        this.fogTiles.set(keyOf({ x, y }), fog)
+      }
     }
   }
 }

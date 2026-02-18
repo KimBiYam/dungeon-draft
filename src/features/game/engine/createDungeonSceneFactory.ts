@@ -1,4 +1,5 @@
 import type { CreateRoguelikeGameOptions } from './contracts'
+import { GOLD_HEAL_AMOUNT, GOLD_HEAL_COST } from './contracts'
 import {
   MAP_H,
   MAP_W,
@@ -22,11 +23,11 @@ import {
   HERO_ATTACK_ANIM,
   HERO_HURT_ANIM,
   HERO_IDLE_ANIM,
-  MONSTER_ATTACK_ANIM,
-  MONSTER_HURT_ANIM,
-  MONSTER_IDLE_ANIM,
   ensureAnimations,
   ensureSpriteSheets,
+  getMonsterAttackAnimKey,
+  getMonsterHurtAnimKey,
+  getMonsterIdleAnimKey,
 } from './spriteSheet'
 
 export function createDungeonSceneFactory(
@@ -59,6 +60,27 @@ export function createDungeonSceneFactory(
       this.run = createInitialRun()
       this.visuals.rebuildFloorObjects(this.run)
       callbacks.onLog('New run started.')
+      this.pushState()
+    }
+
+    spendGoldForHeal() {
+      if (this.run.gameOver) {
+        this.pushLog('Cannot heal after death. Start a new run.')
+        return
+      }
+      if (this.run.gold < GOLD_HEAL_COST) {
+        this.pushLog(`Need ${GOLD_HEAL_COST} gold to mend.`)
+        return
+      }
+      if (this.run.hp >= this.run.maxHp) {
+        this.pushLog('HP is already full.')
+        return
+      }
+
+      this.run.gold -= GOLD_HEAL_COST
+      const healed = Math.min(GOLD_HEAL_AMOUNT, this.run.maxHp - this.run.hp)
+      this.run.hp += healed
+      this.pushLog(`Mended wounds for ${healed} HP (-${GOLD_HEAL_COST} gold).`)
       this.pushState()
     }
 
@@ -97,8 +119,8 @@ export function createDungeonSceneFactory(
           this.hitFlash(target, 0xfb7185)
           this.playOnceThen(
             this.visuals.getEnemySprite(enemy.id),
-            MONSTER_HURT_ANIM,
-            MONSTER_IDLE_ANIM,
+            getMonsterHurtAnimKey(enemy.monsterTypeId),
+            getMonsterIdleAnimKey(enemy.monsterTypeId),
           )
           if (enemy.hp <= 0) {
             this.run.floorData.enemies = this.run.floorData.enemies.filter(
@@ -108,7 +130,7 @@ export function createDungeonSceneFactory(
             const gold = randomInt(3, 9)
             this.run.xp += xp
             this.run.gold += gold
-            this.pushLog(`Enemy down. +${xp} XP, +${gold} gold.`)
+            this.pushLog(`${enemy.monsterName} down. +${xp} XP, +${gold} gold.`)
             this.cameraShake(120)
             this.visuals.destroyEnemyVisual(enemy.id)
           } else {
@@ -147,7 +169,10 @@ export function createDungeonSceneFactory(
             return
           }
 
-          this.visuals.tweenPlayerTo(target, () => this.visuals.updatePlayerHpBar(this.run))
+          this.visuals.tweenPlayerTo(target, () => {
+            this.visuals.updatePlayerHpBar(this.run)
+            this.visuals.updateVision(this.run)
+          })
         }
       } else {
         this.pushLog('You hold your stance.')
@@ -173,12 +198,12 @@ export function createDungeonSceneFactory(
         if (distance === 1) {
           this.playOnceThen(
             this.visuals.getEnemySprite(enemy.id),
-            MONSTER_ATTACK_ANIM,
-            MONSTER_IDLE_ANIM,
+            getMonsterAttackAnimKey(enemy.monsterTypeId),
+            getMonsterIdleAnimKey(enemy.monsterTypeId),
           )
           const dmg = this.monsterRole.calculateAttackDamage(enemy.atk, this.run.def)
           this.run.hp -= dmg
-          this.pushLog(`Enemy hits for ${dmg}.`)
+          this.pushLog(`${enemy.monsterName} hits for ${dmg}.`)
           this.hitFlash(this.run.player, 0x38bdf8)
           this.playOnceThen(this.visuals.getPlayerSprite(), HERO_HURT_ANIM, HERO_IDLE_ANIM)
           if (this.run.hp <= 0) {
@@ -246,6 +271,7 @@ export function createDungeonSceneFactory(
 
     private pushState() {
       this.visuals.updatePlayerHpBar(this.run)
+      this.visuals.updateVision(this.run)
       callbacks.onState(toHud(this.run))
     }
 

@@ -1,5 +1,16 @@
+import { MonsterTypeCatalog, scaleMonsterStats } from './monsterTypes'
+
 export type Pos = { x: number; y: number }
-export type Enemy = { id: string; pos: Pos; hp: number; maxHp: number; atk: number }
+export type Enemy = {
+  id: string
+  pos: Pos
+  hp: number
+  maxHp: number
+  atk: number
+  monsterTypeId: string
+  monsterName: string
+  monsterTint: number
+}
 export type FloorData = {
   walls: Set<string>
   enemies: Enemy[]
@@ -59,6 +70,8 @@ export function clamp(value: number, min: number, max: number) {
 }
 
 export function createFloor(floor: number): FloorData {
+  const monsterCatalog = new MonsterTypeCatalog()
+  const monsterTypes = monsterCatalog.list()
   const walls = new Set<string>()
   const blocked = new Set<string>([keyOf(START_POS)])
 
@@ -90,14 +103,19 @@ export function createFloor(floor: number): FloorData {
     }
   }
 
-  const enemies: Enemy[] = Array.from({ length: 5 + floor }, (_, idx) => {
-    const hp = 10 + floor * 2 + randomInt(0, 4)
+  const enemies: Enemy[] = Array.from({ length: 3 + Math.ceil(floor / 2) }, (_, idx) => {
+    const monsterType = monsterTypes[randomInt(0, monsterTypes.length - 1)]
+    const scaled = scaleMonsterStats(monsterType, floor)
+    const hp = scaled.maxHp + randomInt(0, 3)
     return {
       id: `f${floor}-e${idx}`,
       pos: findFree(),
       hp,
       maxHp: hp,
-      atk: 3 + Math.floor(floor / 2),
+      atk: scaled.atk,
+      monsterTypeId: monsterType.id,
+      monsterName: monsterType.name,
+      monsterTint: monsterType.tint,
     }
   })
 

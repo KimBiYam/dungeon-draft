@@ -30,6 +30,7 @@ export async function createRoguelikeGame(
 
   return {
     newRun: () => scene.newRun(),
+    spendGoldForHeal: () => scene.spendGoldForHeal(),
     destroy: () => game.destroy(true),
   }
 }
