@@ -1,12 +1,12 @@
-import type { HudState } from '../engine/createRoguelikeGame'
+import { useSessionStore } from '../store/sessionStore'
 import { StatCard } from './StatCard'
 
-type StatusStatsProps = {
-  status: string
-  hud: HudState
-}
+export function StatusStats() {
+  const hud = useSessionStore((state) => state.hud)
+  const status = hud.gameOver
+    ? `Run Over on Floor ${hud.floor}`
+    : `Floor ${hud.floor} · ${hud.enemiesLeft} enemies`
 
-export function StatusStats({ status, hud }: StatusStatsProps) {
   return (
     <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-5">
       <StatCard label="Status" value={status} />
