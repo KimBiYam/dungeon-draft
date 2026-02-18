@@ -1,20 +1,10 @@
-import { useCallback } from 'react'
-
 import { useAudioStore } from '../store/audioStore'
 
 export function AudioControls() {
-  'use memo'
-
   const muted = useAudioStore((state) => state.audioMuted)
   const volume = useAudioStore((state) => state.audioVolume)
   const onToggleMuted = useAudioStore((state) => state.toggleAudioMuted)
   const onVolumeChange = useAudioStore((state) => state.setAudioVolumePercent)
-  const handleVolumeChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      onVolumeChange(Number(event.target.value))
-    },
-    [onVolumeChange],
-  )
 
   return (
     <div className="flex items-center gap-2">
@@ -33,7 +23,7 @@ export function AudioControls() {
           max={100}
           step={1}
           value={volume}
-          onChange={handleVolumeChange}
+          onChange={(event) => onVolumeChange(Number(event.target.value))}
           className="w-20 accent-cyan-300"
         />
         <span className="w-8 text-right tabular-nums">{volume}%</span>

@@ -1,12 +1,10 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { useUiStore } from '../store/uiStore'
 import { AudioControls } from './AudioControls'
 import { HelpModal } from './HelpModal'
 
 export function StatusPanelHeader() {
-  'use memo'
-
   const [isHelpOpen, setIsHelpOpen] = useState(false)
   const setUiInputBlockedByStatusPanel = useUiStore(
     (state) => state.setUiInputBlockedByStatusPanel,
@@ -17,9 +15,6 @@ export function StatusPanelHeader() {
     return () => setUiInputBlockedByStatusPanel(false)
   }, [isHelpOpen, setUiInputBlockedByStatusPanel])
 
-  const openHelp = useCallback(() => setIsHelpOpen(true), [])
-  const closeHelp = useCallback(() => setIsHelpOpen(false), [])
-
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -28,14 +23,14 @@ export function StatusPanelHeader() {
           <AudioControls />
           <button
             type="button"
-            onClick={openHelp}
+            onClick={() => setIsHelpOpen(true)}
             className="rounded-md border border-cyan-300/40 px-3 py-1 text-xs font-semibold text-cyan-100 transition hover:bg-cyan-400/10"
           >
             Help
           </button>
         </div>
       </div>
-      <HelpModal open={isHelpOpen} onClose={closeHelp} />
+      <HelpModal open={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
     </>
   )
 }
