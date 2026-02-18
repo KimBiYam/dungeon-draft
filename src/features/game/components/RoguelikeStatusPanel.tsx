@@ -24,7 +24,7 @@ export function RoguelikeStatusPanel({
   return (
     <section className="mb-5 rounded-xl border border-cyan-400/30 bg-linear-to-r from-cyan-950/70 via-zinc-900 to-emerald-950/70 p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-2xl font-bold text-cyan-200">Voidcard Depths</h2>
+        <h2 className="text-2xl font-bold text-cyan-200">Dungeon Draft</h2>
         <div className="flex flex-wrap items-center gap-2">
           <AudioControls
             muted={audioMuted}
