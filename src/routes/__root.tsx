@@ -28,11 +28,11 @@ export const Route = createRootRoute({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko" suppressHydrationWarning>
+    <html lang="ko">
       <head>
         <HeadContent />
       </head>
-      <body suppressHydrationWarning>
+      <body>
         {children}
         <Scripts />
       </body>
