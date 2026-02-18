@@ -1,16 +1,11 @@
-type AudioControlsProps = {
-  muted: boolean
-  volume: number
-  onToggleMuted: () => void
-  onVolumeChange: (volume: number) => void
-}
+import { useAudioStore } from '../store/audioStore'
 
-export function AudioControls({
-  muted,
-  volume,
-  onToggleMuted,
-  onVolumeChange,
-}: AudioControlsProps) {
+export function AudioControls() {
+  const muted = useAudioStore((state) => state.audioMuted)
+  const volume = useAudioStore((state) => state.audioVolume)
+  const onToggleMuted = useAudioStore((state) => state.toggleAudioMuted)
+  const onVolumeChange = useAudioStore((state) => state.setAudioVolumePercent)
+
   return (
     <div className="flex items-center gap-2">
       <button

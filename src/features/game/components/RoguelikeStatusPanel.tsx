@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 
-import { useAudioStore } from '../store/audioStore'
 import { useSessionStore } from '../store/sessionStore'
 import { useUiStore } from '../store/uiStore'
 import { AudioControls } from './AudioControls'
@@ -10,10 +9,6 @@ import { StatCard } from './StatCard'
 export function RoguelikeStatusPanel() {
   const [isHelpOpen, setIsHelpOpen] = useState(false)
   const hud = useSessionStore((state) => state.hud)
-  const audioMuted = useAudioStore((state) => state.audioMuted)
-  const audioVolume = useAudioStore((state) => state.audioVolume)
-  const toggleAudioMuted = useAudioStore((state) => state.toggleAudioMuted)
-  const setAudioVolumePercent = useAudioStore((state) => state.setAudioVolumePercent)
   const setUiInputBlockedByStatusPanel = useUiStore(
     (state) => state.setUiInputBlockedByStatusPanel,
   )
@@ -36,12 +31,7 @@ export function RoguelikeStatusPanel() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-2xl font-bold text-cyan-200">Dungeon Draft</h2>
           <div className="flex flex-wrap items-center gap-2">
-            <AudioControls
-              muted={audioMuted}
-              volume={audioVolume}
-              onToggleMuted={toggleAudioMuted}
-              onVolumeChange={setAudioVolumePercent}
-            />
+            <AudioControls />
             <button
               type="button"
               onClick={() => setIsHelpOpen(true)}
