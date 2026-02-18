@@ -122,14 +122,13 @@ export function createDungeonSceneFactory(
     private bindInput() {
       this.input.keyboard?.on('keydown', (event: KeyboardEvent) => {
         if (event.repeat) return
-        const key = event.key.toLowerCase()
 
-        if (key === 'q') {
+        if (event.code === 'KeyQ') {
           event.preventDefault()
           this.spendGoldForWeaponUpgrade()
           return
         }
-        if (key === 'e') {
+        if (event.code === 'KeyE') {
           event.preventDefault()
           this.spendGoldForArmorUpgrade()
           return
