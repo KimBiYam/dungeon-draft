@@ -43,15 +43,12 @@ export type UiStoreState = {
   uiBlockedByStatusPanel: boolean
   isNewRunConfirmOpen: boolean
   isDeathRestartOpen: boolean
-  isHeroClassModalOpen: boolean
   setUiInputBlockedByWidget: (blocked: boolean) => void
   setUiInputBlockedByStatusPanel: (blocked: boolean) => void
   openNewRunConfirm: () => void
   closeNewRunConfirm: () => void
   openDeathRestart: () => void
   closeDeathRestart: () => void
-  openHeroClassModal: () => void
-  closeHeroClassModal: () => void
 }
 
 export type RuntimeStoreState = {

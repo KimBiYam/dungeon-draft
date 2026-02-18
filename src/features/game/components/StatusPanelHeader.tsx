@@ -9,7 +9,6 @@ export function StatusPanelHeader() {
   const setUiInputBlockedByStatusPanel = useUiStore(
     (state) => state.setUiInputBlockedByStatusPanel,
   )
-  const openHeroClassModal = useUiStore((state) => state.openHeroClassModal)
 
   useEffect(() => {
     setUiInputBlockedByStatusPanel(isHelpOpen)
@@ -22,13 +21,6 @@ export function StatusPanelHeader() {
         <h2 className="text-2xl font-bold text-cyan-200">Dungeon Draft</h2>
         <div className="flex flex-wrap items-center gap-2">
           <AudioControls />
-          <button
-            type="button"
-            onClick={openHeroClassModal}
-            className="rounded-md border border-cyan-300/40 px-3 py-1 text-xs font-semibold text-cyan-100 transition hover:bg-cyan-400/10"
-          >
-            Class
-          </button>
           <button
             type="button"
             onClick={() => setIsHelpOpen(true)}
