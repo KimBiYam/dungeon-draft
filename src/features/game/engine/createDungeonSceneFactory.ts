@@ -335,20 +335,7 @@ export function createDungeonSceneFactory(
     }
 
     private trapHitFlash() {
-      const flash = this.add
-        .rectangle(0, 0, this.scale.width, this.scale.height, 0xdc2626, 0)
-        .setOrigin(0, 0)
-        .setScrollFactor(0)
-        .setDepth(120)
-
-      this.tweens.add({
-        targets: flash,
-        alpha: 0.28,
-        duration: 90,
-        yoyo: true,
-        ease: 'Sine.Out',
-        onComplete: () => flash.destroy(),
-      })
+      this.cameras.main.flash(140, 220, 38, 38, true)
     }
 
     private hitFlash(pos: Pos, color: number) {
