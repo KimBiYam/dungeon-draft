@@ -23,7 +23,7 @@ export function LevelUpChoiceModal({ choices, onPick }: LevelUpChoiceModalProps)
               onClick={() => onPick(choice.id)}
               className="rounded-lg border border-cyan-300/30 bg-zinc-950/70 p-4 text-left transition hover:border-cyan-300/70 hover:bg-cyan-500/10"
             >
-              <p className="text-xs text-cyan-300">{index + 1} key</p>
+              <p className="text-xs text-cyan-300">{index + 1} (NumPad {index + 1})</p>
               <p className="mt-1 text-sm font-semibold text-cyan-100">{choice.title}</p>
               <p className="mt-2 text-xs text-zinc-300">{choice.description}</p>
             </button>
