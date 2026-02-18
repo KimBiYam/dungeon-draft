@@ -1,13 +1,15 @@
 import { useEffect, useRef } from 'react'
 
-import { useGameUiStore } from '../store/gameUiStore'
+import { useRuntimeStore } from '../store/runtimeStore'
+import { useSessionStore } from '../store/sessionStore'
+import { useUiStore } from '../store/uiStore'
 
 export function DeathRestartModal() {
-  const gameOver = useGameUiStore((state) => state.hud.gameOver)
-  const open = useGameUiStore((state) => state.isDeathRestartOpen)
-  const openDeathRestart = useGameUiStore((state) => state.openDeathRestart)
-  const closeDeathRestart = useGameUiStore((state) => state.closeDeathRestart)
-  const confirmNewRun = useGameUiStore((state) => state.confirmNewRun)
+  const gameOver = useSessionStore((state) => state.hud.gameOver)
+  const open = useUiStore((state) => state.isDeathRestartOpen)
+  const openDeathRestart = useUiStore((state) => state.openDeathRestart)
+  const closeDeathRestart = useUiStore((state) => state.closeDeathRestart)
+  const newRun = useRuntimeStore((state) => state.newRun)
   const prevGameOverRef = useRef(gameOver)
 
   useEffect(() => {
@@ -19,6 +21,11 @@ export function DeathRestartModal() {
     }
     prevGameOverRef.current = gameOver
   }, [closeDeathRestart, gameOver, openDeathRestart])
+
+  const onRestart = () => {
+    closeDeathRestart()
+    newRun()
+  }
 
   if (!open) {
     return null
@@ -45,7 +52,7 @@ export function DeathRestartModal() {
           </button>
           <button
             type="button"
-            onClick={confirmNewRun}
+            onClick={onRestart}
             className="w-full rounded-md border border-rose-400/50 px-3 py-2 text-sm text-rose-200 transition hover:bg-rose-400/10"
           >
             Restart Run

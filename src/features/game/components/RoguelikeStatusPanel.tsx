@@ -1,18 +1,20 @@
 import { useEffect, useMemo, useState } from 'react'
 
-import { useGameUiStore } from '../store/gameUiStore'
+import { useAudioStore } from '../store/audioStore'
+import { useSessionStore } from '../store/sessionStore'
+import { useUiStore } from '../store/uiStore'
 import { AudioControls } from './AudioControls'
 import { HelpModal } from './HelpModal'
 import { StatCard } from './StatCard'
 
 export function RoguelikeStatusPanel() {
   const [isHelpOpen, setIsHelpOpen] = useState(false)
-  const hud = useGameUiStore((state) => state.hud)
-  const audioMuted = useGameUiStore((state) => state.audioMuted)
-  const audioVolume = useGameUiStore((state) => state.audioVolume)
-  const toggleAudioMuted = useGameUiStore((state) => state.toggleAudioMuted)
-  const setAudioVolumePercent = useGameUiStore((state) => state.setAudioVolumePercent)
-  const setUiInputBlockedByStatusPanel = useGameUiStore(
+  const hud = useSessionStore((state) => state.hud)
+  const audioMuted = useAudioStore((state) => state.audioMuted)
+  const audioVolume = useAudioStore((state) => state.audioVolume)
+  const toggleAudioMuted = useAudioStore((state) => state.toggleAudioMuted)
+  const setAudioVolumePercent = useAudioStore((state) => state.setAudioVolumePercent)
+  const setUiInputBlockedByStatusPanel = useUiStore(
     (state) => state.setUiInputBlockedByStatusPanel,
   )
 

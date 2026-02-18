@@ -1,12 +1,13 @@
 import { useEffect } from 'react'
 
-import { useGameUiStore } from '../store/gameUiStore'
+import { useSessionStore } from '../store/sessionStore'
+import { useUiStore } from '../store/uiStore'
 
 export function GameInputBlockSync() {
-  const levelUpChoices = useGameUiStore((state) => state.levelUpChoices)
-  const isNewRunConfirmOpen = useGameUiStore((state) => state.isNewRunConfirmOpen)
-  const isDeathRestartOpen = useGameUiStore((state) => state.isDeathRestartOpen)
-  const setUiInputBlockedByWidget = useGameUiStore(
+  const levelUpChoices = useSessionStore((state) => state.levelUpChoices)
+  const isNewRunConfirmOpen = useUiStore((state) => state.isNewRunConfirmOpen)
+  const isDeathRestartOpen = useUiStore((state) => state.isDeathRestartOpen)
+  const setUiInputBlockedByWidget = useUiStore(
     (state) => state.setUiInputBlockedByWidget,
   )
 

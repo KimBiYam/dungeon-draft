@@ -1,14 +1,9 @@
-import type { StateCreator } from 'zustand'
+import { create } from 'zustand'
 
-import { syncApiSettings } from './storeHelpers'
-import type { GameUiStore, RuntimeSlice } from './types'
+import { useSessionStore } from './sessionStore'
+import type { RuntimeStoreState } from './types'
 
-export const createRuntimeStore: StateCreator<
-  GameUiStore,
-  [],
-  [],
-  RuntimeSlice
-> = (set, get) => ({
+export const useRuntimeStore = create<RuntimeStoreState>((set, get) => ({
   api: null,
   setApi: (api) => {
     const prevApi = get().api
@@ -16,13 +11,12 @@ export const createRuntimeStore: StateCreator<
       prevApi.destroy()
     }
     set({ api })
-    syncApiSettings(get())
   },
   newRun: () => {
     get().api?.newRun()
-    get().resetSessionState()
+    useSessionStore.getState().resetSessionState()
   },
   pickLevelUpChoice: (choiceId) => {
     get().api?.chooseLevelUpReward(choiceId)
   },
-})
+}))

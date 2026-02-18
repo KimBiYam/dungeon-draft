@@ -17,7 +17,7 @@ export const initialHud: HudState = {
   gameOver: false,
 }
 
-export type SessionSlice = {
+export type SessionStoreState = {
   hud: HudState
   logs: string[]
   levelUpChoices: LevelUpChoice[] | null
@@ -27,14 +27,14 @@ export type SessionSlice = {
   setLevelUpChoices: (choices: LevelUpChoice[] | null) => void
 }
 
-export type AudioSlice = {
+export type AudioStoreState = {
   audioMuted: boolean
   audioVolume: number
   toggleAudioMuted: () => void
   setAudioVolumePercent: (percent: number) => void
 }
 
-export type UiSlice = {
+export type UiStoreState = {
   uiBlockedByWidget: boolean
   uiBlockedByStatusPanel: boolean
   isNewRunConfirmOpen: boolean
@@ -45,14 +45,11 @@ export type UiSlice = {
   closeNewRunConfirm: () => void
   openDeathRestart: () => void
   closeDeathRestart: () => void
-  confirmNewRun: () => void
 }
 
-export type RuntimeSlice = {
+export type RuntimeStoreState = {
   api: RoguelikeGameApi | null
   setApi: (api: RoguelikeGameApi | null) => void
   newRun: () => void
   pickLevelUpChoice: (choiceId: string) => void
 }
-
-export type GameUiStore = SessionSlice & AudioSlice & UiSlice & RuntimeSlice

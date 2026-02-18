@@ -1,4 +1,5 @@
 import { CombatLogPanel } from '../../features/game/components/CombatLogPanel'
+import { GameApiSettingsSync } from '../../features/game/components/GameApiSettingsSync'
 import { DeathRestartModal } from '../../features/game/components/DeathRestartModal'
 import { GameInputBlockSync } from '../../features/game/components/GameInputBlockSync'
 import { LevelUpChoiceModal } from '../../features/game/components/LevelUpChoiceModal'
@@ -9,6 +10,7 @@ import { RoguelikeStatusPanel } from '../../features/game/components/RoguelikeSt
 export function RoguelikeGameWidget() {
   return (
     <>
+      <GameApiSettingsSync />
       <GameInputBlockSync />
       <RoguelikeStatusPanel />
 

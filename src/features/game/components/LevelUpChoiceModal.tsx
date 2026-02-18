@@ -1,8 +1,9 @@
-import { useGameUiStore } from '../store/gameUiStore'
+import { useRuntimeStore } from '../store/runtimeStore'
+import { useSessionStore } from '../store/sessionStore'
 
 export function LevelUpChoiceModal() {
-  const choices = useGameUiStore((state) => state.levelUpChoices)
-  const pickLevelUpChoice = useGameUiStore((state) => state.pickLevelUpChoice)
+  const choices = useSessionStore((state) => state.levelUpChoices)
+  const pickLevelUpChoice = useRuntimeStore((state) => state.pickLevelUpChoice)
 
   if (!choices || choices.length === 0) {
     return null

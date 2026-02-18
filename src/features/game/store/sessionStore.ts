@@ -1,14 +1,8 @@
-import type { StateCreator } from 'zustand'
+import { create } from 'zustand'
 
-import type { GameUiStore, SessionSlice } from './types'
-import { initialHud } from './types'
+import { initialHud, type SessionStoreState } from './types'
 
-export const createSessionStore: StateCreator<
-  GameUiStore,
-  [],
-  [],
-  SessionSlice
-> = (set) => ({
+export const useSessionStore = create<SessionStoreState>((set) => ({
   hud: initialHud,
   logs: [],
   levelUpChoices: null,
@@ -16,4 +10,4 @@ export const createSessionStore: StateCreator<
   pushLog: (line) => set((state) => ({ logs: [line, ...state.logs].slice(0, 14) })),
   resetSessionState: () => set({ logs: [], levelUpChoices: null }),
   setLevelUpChoices: (choices) => set({ levelUpChoices: choices }),
-})
+}))

@@ -1,16 +1,23 @@
 import { clampVolume } from '../engine/audio'
-import type { GameUiStore } from './types'
+import type { RoguelikeGameApi } from '../engine/createRoguelikeGame'
 
-export function applyUiInputBlocked(state: Pick<GameUiStore, 'api' | 'uiBlockedByWidget' | 'uiBlockedByStatusPanel'>) {
-  state.api?.setUiInputBlocked(state.uiBlockedByWidget || state.uiBlockedByStatusPanel)
+export function applyUiInputBlocked(
+  api: RoguelikeGameApi | null,
+  uiBlockedByWidget: boolean,
+  uiBlockedByStatusPanel: boolean,
+) {
+  api?.setUiInputBlocked(uiBlockedByWidget || uiBlockedByStatusPanel)
 }
 
-export function syncApiSettings(state: Pick<GameUiStore, 'api' | 'audioMuted' | 'audioVolume' | 'uiBlockedByWidget' | 'uiBlockedByStatusPanel'>) {
-  if (!state.api) {
+export function applyAudioSettings(
+  api: RoguelikeGameApi | null,
+  muted: boolean,
+  volumePercent: number,
+) {
+  if (!api) {
     return
   }
 
-  applyUiInputBlocked(state)
-  state.api.setAudioMuted(state.audioMuted)
-  state.api.setAudioVolume(clampVolume(state.audioVolume / 100))
+  api.setAudioMuted(muted)
+  api.setAudioVolume(clampVolume(volumePercent / 100))
 }

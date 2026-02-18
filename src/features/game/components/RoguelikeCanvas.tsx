@@ -1,17 +1,18 @@
 import { useEffect, useRef, useState } from 'react'
 
 import { createRoguelikeGame } from '../engine/createRoguelikeGame'
-import { useGameUiStore } from '../store/gameUiStore'
+import { useRuntimeStore } from '../store/runtimeStore'
+import { useSessionStore } from '../store/sessionStore'
 
 export default function RoguelikeCanvas() {
   const mountRef = useRef<HTMLDivElement | null>(null)
   const [bootFailed, setBootFailed] = useState(false)
   const [ready, setReady] = useState(false)
 
-  const setHud = useGameUiStore((state) => state.setHud)
-  const pushLog = useGameUiStore((state) => state.pushLog)
-  const setLevelUpChoices = useGameUiStore((state) => state.setLevelUpChoices)
-  const setApi = useGameUiStore((state) => state.setApi)
+  const setHud = useSessionStore((state) => state.setHud)
+  const pushLog = useSessionStore((state) => state.pushLog)
+  const setLevelUpChoices = useSessionStore((state) => state.setLevelUpChoices)
+  const setApi = useRuntimeStore((state) => state.setApi)
 
   useEffect(() => {
     if (!mountRef.current) {

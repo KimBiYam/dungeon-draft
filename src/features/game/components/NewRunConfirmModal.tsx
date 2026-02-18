@@ -1,9 +1,15 @@
-import { useGameUiStore } from '../store/gameUiStore'
+import { useRuntimeStore } from '../store/runtimeStore'
+import { useUiStore } from '../store/uiStore'
 
 export function NewRunConfirmModal() {
-  const open = useGameUiStore((state) => state.isNewRunConfirmOpen)
-  const closeNewRunConfirm = useGameUiStore((state) => state.closeNewRunConfirm)
-  const confirmNewRun = useGameUiStore((state) => state.confirmNewRun)
+  const open = useUiStore((state) => state.isNewRunConfirmOpen)
+  const closeNewRunConfirm = useUiStore((state) => state.closeNewRunConfirm)
+  const newRun = useRuntimeStore((state) => state.newRun)
+
+  const onConfirm = () => {
+    closeNewRunConfirm()
+    newRun()
+  }
 
   if (!open) {
     return null
@@ -32,7 +38,7 @@ export function NewRunConfirmModal() {
           </button>
           <button
             type="button"
-            onClick={confirmNewRun}
+            onClick={onConfirm}
             className="w-full rounded-md border border-cyan-400/50 px-3 py-2 text-sm text-cyan-200 transition hover:bg-cyan-400/10"
           >
             Confirm

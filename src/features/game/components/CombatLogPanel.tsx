@@ -1,8 +1,9 @@
-import { useGameUiStore } from '../store/gameUiStore'
+import { useSessionStore } from '../store/sessionStore'
+import { useUiStore } from '../store/uiStore'
 
 export function CombatLogPanel() {
-  const logs = useGameUiStore((state) => state.logs)
-  const openNewRunConfirm = useGameUiStore((state) => state.openNewRunConfirm)
+  const logs = useSessionStore((state) => state.logs)
+  const openNewRunConfirm = useUiStore((state) => state.openNewRunConfirm)
 
   return (
     <aside className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
