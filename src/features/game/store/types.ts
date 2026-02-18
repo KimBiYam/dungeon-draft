@@ -1,10 +1,12 @@
 import type {
+  HeroClassId,
   HudState,
   LevelUpChoice,
   RoguelikeGameApi,
 } from '../engine/createRoguelikeGame'
 
 export const initialHud: HudState = {
+  heroClass: 'knight',
   floor: 1,
   hp: 32,
   maxHp: 32,
@@ -18,10 +20,12 @@ export const initialHud: HudState = {
 }
 
 export type SessionStoreState = {
+  heroClass: HeroClassId
   hud: HudState
   logs: string[]
   levelUpChoices: LevelUpChoice[] | null
   setHud: (state: HudState) => void
+  setHeroClass: (heroClass: HeroClassId) => void
   pushLog: (line: string) => void
   resetSessionState: () => void
   setLevelUpChoices: (choices: LevelUpChoice[] | null) => void
@@ -39,17 +43,20 @@ export type UiStoreState = {
   uiBlockedByStatusPanel: boolean
   isNewRunConfirmOpen: boolean
   isDeathRestartOpen: boolean
+  isHeroClassModalOpen: boolean
   setUiInputBlockedByWidget: (blocked: boolean) => void
   setUiInputBlockedByStatusPanel: (blocked: boolean) => void
   openNewRunConfirm: () => void
   closeNewRunConfirm: () => void
   openDeathRestart: () => void
   closeDeathRestart: () => void
+  openHeroClassModal: () => void
+  closeHeroClassModal: () => void
 }
 
 export type RuntimeStoreState = {
   api: RoguelikeGameApi | null
   setApi: (api: RoguelikeGameApi | null) => void
-  newRun: () => void
+  newRun: (heroClass: HeroClassId) => void
   pickLevelUpChoice: (choiceId: string) => void
 }

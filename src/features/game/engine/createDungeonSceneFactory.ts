@@ -6,6 +6,7 @@ import { InputMapper } from './input'
 import {
   START_POS,
   TILE,
+  type HeroClassId,
   type TrapKind,
   clamp,
   createFloor,
@@ -34,7 +35,7 @@ export function createDungeonSceneFactory(
   callbacks: CreateRoguelikeGameOptions,
 ) {
   return class DungeonScene extends Phaser.Scene {
-    private run: RunState = createInitialRun()
+    private run: RunState = createInitialRun(callbacks.initialHeroClass)
     private uiInputBlocked = false
     private pendingLevelUps = 0
     private activeLevelUpChoices: LevelUpChoice[] | null = null
@@ -58,18 +59,20 @@ export function createDungeonSceneFactory(
       this.bindInput()
       this.visuals.rebuildFloorObjects(this.run)
       callbacks.onLevelUpChoices(null)
-      callbacks.onLog('Run started. Reach the portal to descend.')
+      callbacks.onLog(
+        `${this.run.heroClass} run started. Reach the portal to descend.`,
+      )
       this.audio.play('runStart')
       this.pushState()
     }
 
-    newRun() {
-      this.run = createInitialRun()
+    newRun(heroClass: HeroClassId) {
+      this.run = createInitialRun(heroClass)
       this.pendingLevelUps = 0
       this.activeLevelUpChoices = null
       callbacks.onLevelUpChoices(null)
       this.visuals.rebuildFloorObjects(this.run)
-      callbacks.onLog('New run started.')
+      callbacks.onLog(`New ${heroClass} run started.`)
       this.audio.play('newRun')
       this.pushState()
     }
@@ -79,7 +82,11 @@ export function createDungeonSceneFactory(
         return
       }
 
-      const log = this.heroRole.applyLevelUpChoice(this.run, choiceId)
+      const log = this.heroRole.applyLevelUpChoice(
+        this.run,
+        choiceId,
+        this.run.heroClass,
+      )
       if (!log) {
         return
       }
@@ -135,7 +142,7 @@ export function createDungeonSceneFactory(
     }
 
     private offerLevelUpChoices() {
-      const choices = this.heroRole.createLevelUpChoices(3)
+      const choices = this.heroRole.createLevelUpChoices(this.run.heroClass, 3)
       this.activeLevelUpChoices = choices
       callbacks.onLevelUpChoices(choices)
       this.pushLog('Level up! Choose one card.')

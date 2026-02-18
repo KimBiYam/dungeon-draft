@@ -32,6 +32,7 @@ export type FloorData = {
   exit: Pos
 }
 export type RunState = {
+  heroClass: HeroClassId
   floor: number
   turn: number
   hp: number
@@ -47,6 +48,7 @@ export type RunState = {
 }
 
 export type HudState = {
+  heroClass: HeroClassId
   floor: number
   hp: number
   maxHp: number
@@ -65,6 +67,48 @@ export const MIN_MAP_H = 8
 export const MAX_MAP_H = 14
 export const TILE = 48
 export const START_POS = { x: 1, y: 1 }
+
+export type HeroClassId = 'knight' | 'berserker' | 'ranger'
+
+export type HeroClassDefinition = {
+  id: HeroClassId
+  name: string
+  description: string
+  baseHp: number
+  baseAtk: number
+  baseDef: number
+}
+
+export const HERO_CLASSES: HeroClassDefinition[] = [
+  {
+    id: 'knight',
+    name: 'Knight',
+    description: 'Balanced frontline fighter with high durability.',
+    baseHp: 36,
+    baseAtk: 6,
+    baseDef: 2,
+  },
+  {
+    id: 'berserker',
+    name: 'Berserker',
+    description: 'High damage bruiser with lower defense.',
+    baseHp: 32,
+    baseAtk: 9,
+    baseDef: 0,
+  },
+  {
+    id: 'ranger',
+    name: 'Ranger',
+    description: 'Agile skirmisher with precise attacks.',
+    baseHp: 28,
+    baseAtk: 8,
+    baseDef: 1,
+  },
+]
+
+export function getHeroClassDefinition(heroClass: HeroClassId) {
+  return HERO_CLASSES.find((entry) => entry.id === heroClass) ?? HERO_CLASSES[0]
+}
 
 export function keyOf(pos: Pos) {
   return `${pos.x},${pos.y}`
@@ -154,14 +198,16 @@ export function createFloor(floor: number): FloorData {
   return { width, height, walls, enemies, potions, traps, chests, exit }
 }
 
-export function createInitialRun(): RunState {
+export function createInitialRun(heroClass: HeroClassId = 'knight'): RunState {
+  const heroDefinition = getHeroClassDefinition(heroClass)
   return {
+    heroClass,
     floor: 1,
     turn: 0,
-    hp: 32,
-    maxHp: 32,
-    atk: 7,
-    def: 1,
+    hp: heroDefinition.baseHp,
+    maxHp: heroDefinition.baseHp,
+    atk: heroDefinition.baseAtk,
+    def: heroDefinition.baseDef,
     level: 1,
     xp: 0,
     nextXp: 16,
@@ -173,6 +219,7 @@ export function createInitialRun(): RunState {
 
 export function toHud(run: RunState): HudState {
   return {
+    heroClass: run.heroClass,
     floor: run.floor,
     hp: run.hp,
     maxHp: run.maxHp,

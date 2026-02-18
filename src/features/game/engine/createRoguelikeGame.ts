@@ -6,7 +6,7 @@ import {
 import { createDungeonSceneFactory } from './createDungeonSceneFactory'
 
 export type { LevelUpChoice } from './hero'
-export type { HudState } from './model'
+export type { HeroClassId, HudState } from './model'
 export type { RoguelikeGameApi } from './contracts'
 
 export async function createRoguelikeGame(
@@ -30,7 +30,7 @@ export async function createRoguelikeGame(
   })
 
   return {
-    newRun: () => scene.newRun(),
+    newRun: (heroClass) => scene.newRun(heroClass),
     chooseLevelUpReward: (choiceId: string) => scene.chooseLevelUpReward(choiceId),
     setUiInputBlocked: (blocked: boolean) => scene.setUiInputBlocked(blocked),
     setAudioMuted: (muted: boolean) => scene.setAudioMuted(muted),

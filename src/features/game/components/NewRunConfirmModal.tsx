@@ -1,14 +1,16 @@
 import { useRuntimeStore } from '../store/runtimeStore'
+import { useSessionStore } from '../store/sessionStore'
 import { useUiStore } from '../store/uiStore'
 
 export function NewRunConfirmModal() {
   const open = useUiStore((state) => state.isNewRunConfirmOpen)
   const closeNewRunConfirm = useUiStore((state) => state.closeNewRunConfirm)
+  const heroClass = useSessionStore((state) => state.heroClass)
   const newRun = useRuntimeStore((state) => state.newRun)
 
   const onConfirm = () => {
     closeNewRunConfirm()
-    newRun()
+    newRun(heroClass)
   }
 
   if (!open) {

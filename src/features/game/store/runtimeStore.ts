@@ -12,8 +12,8 @@ export const useRuntimeStore = create<RuntimeStoreState>((set, get) => ({
     }
     set({ api })
   },
-  newRun: () => {
-    get().api?.newRun()
+  newRun: (heroClass) => {
+    get().api?.newRun(heroClass)
     useSessionStore.getState().resetSessionState()
   },
   pickLevelUpChoice: (choiceId) => {

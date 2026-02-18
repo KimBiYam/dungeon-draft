@@ -1,15 +1,16 @@
 import type { LevelUpChoice } from './hero'
-import type { HudState } from './model'
+import type { HeroClassId, HudState } from './model'
 
 export type CreateRoguelikeGameOptions = {
   mount: HTMLElement
+  initialHeroClass: HeroClassId
   onState: (state: HudState) => void
   onLog: (message: string) => void
   onLevelUpChoices: (choices: LevelUpChoice[] | null) => void
 }
 
 export type RoguelikeGameApi = {
-  newRun: () => void
+  newRun: (heroClass: HeroClassId) => void
   chooseLevelUpReward: (choiceId: string) => void
   setUiInputBlocked: (blocked: boolean) => void
   setAudioMuted: (muted: boolean) => void

@@ -9,6 +9,7 @@ export function DeathRestartModal() {
   const open = useUiStore((state) => state.isDeathRestartOpen)
   const openDeathRestart = useUiStore((state) => state.openDeathRestart)
   const closeDeathRestart = useUiStore((state) => state.closeDeathRestart)
+  const heroClass = useSessionStore((state) => state.heroClass)
   const newRun = useRuntimeStore((state) => state.newRun)
   const prevGameOverRef = useRef(gameOver)
 
@@ -24,7 +25,7 @@ export function DeathRestartModal() {
 
   const onRestart = () => {
     closeDeathRestart()
-    newRun()
+    newRun(heroClass)
   }
 
   if (!open) {

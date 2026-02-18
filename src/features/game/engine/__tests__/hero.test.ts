@@ -5,6 +5,7 @@ import { HeroRoleService } from '../hero'
 
 function createRun(overrides: Partial<RunState> = {}): RunState {
   return {
+    heroClass: 'knight',
     floor: 1,
     turn: 0,
     hp: 20,
@@ -57,17 +58,24 @@ describe('hero role logic', () => {
 
   it('creates unique random level-up choices', () => {
     const heroRole = new HeroRoleService(() => 0)
-    const picks = heroRole.createLevelUpChoices(3)
+    const picks = heroRole.createLevelUpChoices('knight', 3)
 
     expect(picks).toHaveLength(3)
     expect(new Set(picks.map((pick) => pick.id)).size).toBe(3)
+  })
+
+  it('includes class-specific choices in pool', () => {
+    const heroRole = new HeroRoleService(() => 0)
+    const picks = heroRole.createLevelUpChoices('berserker', 12)
+
+    expect(picks.some((pick) => pick.id.startsWith('berserker-'))).toBe(true)
   })
 
   it('applies selected level-up reward to run', () => {
     const run = createRun({ atk: 7 })
     const heroRole = new HeroRoleService(() => 0)
 
-    const log = heroRole.applyLevelUpChoice(run, 'power-strike')
+    const log = heroRole.applyLevelUpChoice(run, 'power-strike', 'knight')
 
     expect(log).toContain('Power Strike')
     expect(run.atk).toBe(9)

@@ -1,4 +1,4 @@
-import { clamp, type RunState } from './model'
+import { clamp, type HeroClassId, type RunState } from './model'
 
 type Roll = (min: number, max: number) => number
 
@@ -66,6 +66,105 @@ const LEVEL_UP_REWARD_POOL: RewardDefinition[] = [
   },
 ]
 
+const HERO_CLASS_REWARD_POOLS: Record<HeroClassId, RewardDefinition[]> = {
+  knight: [
+    {
+      id: 'knight-bastion',
+      title: 'Bastion',
+      description: 'Max HP +6 and DEF +1',
+      apply: (run) => {
+        run.maxHp += 6
+        run.def += 1
+        run.hp = clamp(run.hp + 6, 0, run.maxHp)
+      },
+    },
+    {
+      id: 'knight-vanguard',
+      title: 'Vanguard',
+      description: 'ATK +1 and DEF +1',
+      apply: (run) => {
+        run.atk += 1
+        run.def += 1
+      },
+    },
+    {
+      id: 'knight-fortify',
+      title: 'Fortify',
+      description: 'Heal 30% Max HP and DEF +1',
+      apply: (run) => {
+        run.def += 1
+        const heal = Math.max(4, Math.floor(run.maxHp * 0.3))
+        run.hp = clamp(run.hp + heal, 0, run.maxHp)
+      },
+    },
+  ],
+  berserker: [
+    {
+      id: 'berserker-rage',
+      title: 'Blood Rage',
+      description: 'ATK +3 and Max HP -2',
+      apply: (run) => {
+        run.atk += 3
+        run.maxHp = Math.max(12, run.maxHp - 2)
+        run.hp = clamp(run.hp, 0, run.maxHp)
+      },
+    },
+    {
+      id: 'berserker-thirst',
+      title: 'Bloodthirst',
+      description: 'ATK +2 and heal 5',
+      apply: (run) => {
+        run.atk += 2
+        run.hp = clamp(run.hp + 5, 0, run.maxHp)
+      },
+    },
+    {
+      id: 'berserker-cruel',
+      title: 'Cruel Momentum',
+      description: 'ATK +2 and DEF +1',
+      apply: (run) => {
+        run.atk += 2
+        run.def += 1
+      },
+    },
+  ],
+  ranger: [
+    {
+      id: 'ranger-focus',
+      title: 'Deadeye Focus',
+      description: 'ATK +2 and XP +8',
+      apply: (run) => {
+        run.atk += 2
+        run.xp += 8
+      },
+    },
+    {
+      id: 'ranger-footwork',
+      title: 'Swift Footwork',
+      description: 'DEF +1 and heal 25% Max HP',
+      apply: (run) => {
+        run.def += 1
+        const heal = Math.max(4, Math.floor(run.maxHp * 0.25))
+        run.hp = clamp(run.hp + heal, 0, run.maxHp)
+      },
+    },
+    {
+      id: 'ranger-survival',
+      title: 'Survival Instinct',
+      description: 'Max HP +5 and ATK +1',
+      apply: (run) => {
+        run.maxHp += 5
+        run.atk += 1
+        run.hp = clamp(run.hp + 5, 0, run.maxHp)
+      },
+    },
+  ],
+}
+
+function getLevelUpRewardPool(heroClass: HeroClassId) {
+  return [...LEVEL_UP_REWARD_POOL, ...HERO_CLASS_REWARD_POOLS[heroClass]]
+}
+
 export class HeroRoleService {
   constructor(private readonly roll: Roll) {}
 
@@ -86,8 +185,8 @@ export class HeroRoleService {
     return gained
   }
 
-  createLevelUpChoices(count = 3): LevelUpChoice[] {
-    const deck = [...LEVEL_UP_REWARD_POOL]
+  createLevelUpChoices(heroClass: HeroClassId, count = 3): LevelUpChoice[] {
+    const deck = getLevelUpRewardPool(heroClass)
     const picks = Math.min(count, deck.length)
     const choices: LevelUpChoice[] = []
 
@@ -104,8 +203,10 @@ export class HeroRoleService {
     return choices
   }
 
-  applyLevelUpChoice(run: RunState, choiceId: string) {
-    const reward = LEVEL_UP_REWARD_POOL.find((entry) => entry.id === choiceId)
+  applyLevelUpChoice(run: RunState, choiceId: string, heroClass: HeroClassId) {
+    const reward = getLevelUpRewardPool(heroClass).find(
+      (entry) => entry.id === choiceId,
+    )
     if (!reward) {
       return null
     }

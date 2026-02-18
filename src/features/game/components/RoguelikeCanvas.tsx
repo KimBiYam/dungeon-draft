@@ -6,6 +6,7 @@ import { useSessionStore } from '../store/sessionStore'
 
 export default function RoguelikeCanvas() {
   const mountRef = useRef<HTMLDivElement | null>(null)
+  const initialHeroClassRef = useRef(useSessionStore.getState().heroClass)
   const [bootFailed, setBootFailed] = useState(false)
   const [ready, setReady] = useState(false)
 
@@ -23,6 +24,7 @@ export default function RoguelikeCanvas() {
 
     void createRoguelikeGame({
       mount: mountRef.current,
+      initialHeroClass: initialHeroClassRef.current,
       onState: setHud,
       onLog: pushLog,
       onLevelUpChoices: setLevelUpChoices,

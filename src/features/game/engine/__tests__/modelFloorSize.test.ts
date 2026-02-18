@@ -7,6 +7,7 @@ import {
   MIN_MAP_W,
   START_POS,
   createFloor,
+  createInitialRun,
   keyOf,
 } from '../model'
 
@@ -35,5 +36,17 @@ describe('createFloor map size randomization', () => {
       ]
       expect(occupied).not.toContain(startKey)
     }
+  })
+
+  it('applies class-based base stats on run creation', () => {
+    const knight = createInitialRun('knight')
+    const berserker = createInitialRun('berserker')
+    const ranger = createInitialRun('ranger')
+
+    expect(knight.heroClass).toBe('knight')
+    expect(berserker.heroClass).toBe('berserker')
+    expect(ranger.heroClass).toBe('ranger')
+    expect(knight.maxHp).toBeGreaterThan(ranger.maxHp)
+    expect(berserker.atk).toBeGreaterThan(knight.atk)
   })
 })
