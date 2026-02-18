@@ -25,11 +25,21 @@ describe('hero role logic', () => {
       atk: 7,
       def: 1,
       level: 1,
+      weaponLevel: 1,
+      armorLevel: 1,
       xp: 40,
       nextXp: 16,
       gold: 0,
       player: { x: 1, y: 1 },
-      floorData: { walls: new Set(), enemies: [], potions: [], goldPiles: [], exit: { x: 2, y: 2 } },
+      floorData: {
+        width: 12,
+        height: 8,
+        walls: new Set(),
+        enemies: [],
+        potions: [],
+        goldPiles: [],
+        exit: { x: 2, y: 2 },
+      },
       gameOver: false,
     }
 

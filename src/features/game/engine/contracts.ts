@@ -1,4 +1,5 @@
 import type { HudState } from './model'
+export { GOLD_HEAL_AMOUNT, GOLD_HEAL_COST } from './economy'
 
 export type CreateRoguelikeGameOptions = {
   mount: HTMLElement
@@ -6,11 +7,10 @@ export type CreateRoguelikeGameOptions = {
   onLog: (message: string) => void
 }
 
-export const GOLD_HEAL_COST = 18
-export const GOLD_HEAL_AMOUNT = 12
-
 export type RoguelikeGameApi = {
   newRun: () => void
   spendGoldForHeal: () => void
+  spendGoldForWeaponUpgrade: () => void
+  spendGoldForArmorUpgrade: () => void
   destroy: () => void
 }

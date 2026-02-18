@@ -12,6 +12,8 @@ export type Enemy = {
   monsterTint: number
 }
 export type FloorData = {
+  width: number
+  height: number
   walls: Set<string>
   enemies: Enemy[]
   potions: Pos[]
@@ -26,6 +28,8 @@ export type RunState = {
   atk: number
   def: number
   level: number
+  weaponLevel: number
+  armorLevel: number
   xp: number
   nextXp: number
   gold: number
@@ -41,6 +45,8 @@ export type HudState = {
   atk: number
   def: number
   level: number
+  weaponLevel: number
+  armorLevel: number
   xp: number
   nextXp: number
   gold: number
@@ -48,8 +54,10 @@ export type HudState = {
   gameOver: boolean
 }
 
-export const MAP_W = 16
-export const MAP_H = 10
+export const MIN_MAP_W = 12
+export const MAX_MAP_W = 20
+export const MIN_MAP_H = 8
+export const MAX_MAP_H = 14
 export const TILE = 48
 export const START_POS = { x: 1, y: 1 }
 
@@ -70,23 +78,25 @@ export function clamp(value: number, min: number, max: number) {
 }
 
 export function createFloor(floor: number): FloorData {
+  const width = randomInt(MIN_MAP_W, MAX_MAP_W)
+  const height = randomInt(MIN_MAP_H, MAX_MAP_H)
   const monsterCatalog = new MonsterTypeCatalog()
   const monsterTypes = monsterCatalog.list()
   const walls = new Set<string>()
   const blocked = new Set<string>([keyOf(START_POS)])
 
-  for (let x = 0; x < MAP_W; x++) {
+  for (let x = 0; x < width; x++) {
     walls.add(keyOf({ x, y: 0 }))
-    walls.add(keyOf({ x, y: MAP_H - 1 }))
+    walls.add(keyOf({ x, y: height - 1 }))
   }
-  for (let y = 0; y < MAP_H; y++) {
+  for (let y = 0; y < height; y++) {
     walls.add(keyOf({ x: 0, y }))
-    walls.add(keyOf({ x: MAP_W - 1, y }))
+    walls.add(keyOf({ x: width - 1, y }))
   }
 
   for (let i = 0; i < 12 + floor; i++) {
-    const pos = { x: randomInt(1, MAP_W - 2), y: randomInt(1, MAP_H - 2) }
-    if ((pos.x <= 2 && pos.y <= 2) || (pos.x >= MAP_W - 3 && pos.y >= MAP_H - 3)) {
+    const pos = { x: randomInt(1, width - 2), y: randomInt(1, height - 2) }
+    if ((pos.x <= 2 && pos.y <= 2) || (pos.x >= width - 3 && pos.y >= height - 3)) {
       continue
     }
     walls.add(keyOf(pos))
@@ -94,7 +104,7 @@ export function createFloor(floor: number): FloorData {
 
   const findFree = () => {
     while (true) {
-      const pos = { x: randomInt(1, MAP_W - 2), y: randomInt(1, MAP_H - 2) }
+      const pos = { x: randomInt(1, width - 2), y: randomInt(1, height - 2) }
       const key = keyOf(pos)
       if (!walls.has(key) && !blocked.has(key)) {
         blocked.add(key)
@@ -123,7 +133,7 @@ export function createFloor(floor: number): FloorData {
   const goldPiles: Pos[] = Array.from({ length: 3 + floor }, findFree)
   const exit = findFree()
 
-  return { walls, enemies, potions, goldPiles, exit }
+  return { width, height, walls, enemies, potions, goldPiles, exit }
 }
 
 export function createInitialRun(): RunState {
@@ -135,6 +145,8 @@ export function createInitialRun(): RunState {
     atk: 7,
     def: 1,
     level: 1,
+    weaponLevel: 1,
+    armorLevel: 1,
     xp: 0,
     nextXp: 16,
     gold: 0,
@@ -152,6 +164,8 @@ export function toHud(run: RunState): HudState {
     atk: run.atk,
     def: run.def,
     level: run.level,
+    weaponLevel: run.weaponLevel,
+    armorLevel: run.armorLevel,
     xp: run.xp,
     nextXp: run.nextXp,
     gold: run.gold,

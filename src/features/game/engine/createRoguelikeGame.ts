@@ -1,4 +1,4 @@
-import { MAP_H, MAP_W, TILE } from './model'
+import { MAX_MAP_H, MAX_MAP_W, TILE } from './model'
 import {
   type CreateRoguelikeGameOptions,
   type RoguelikeGameApi,
@@ -18,8 +18,8 @@ export async function createRoguelikeGame(
   const game = new Phaser.Game({
     type: Phaser.AUTO,
     parent: options.mount,
-    width: MAP_W * TILE,
-    height: MAP_H * TILE,
+    width: MAX_MAP_W * TILE,
+    height: MAX_MAP_H * TILE,
     scene,
     scale: {
       mode: Phaser.Scale.FIT,
@@ -31,6 +31,8 @@ export async function createRoguelikeGame(
   return {
     newRun: () => scene.newRun(),
     spendGoldForHeal: () => scene.spendGoldForHeal(),
+    spendGoldForWeaponUpgrade: () => scene.spendGoldForWeaponUpgrade(),
+    spendGoldForArmorUpgrade: () => scene.spendGoldForArmorUpgrade(),
     destroy: () => game.destroy(true),
   }
 }

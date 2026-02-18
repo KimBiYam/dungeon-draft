@@ -1,8 +1,7 @@
 import type { CreateRoguelikeGameOptions } from './contracts'
 import { GOLD_HEAL_AMOUNT, GOLD_HEAL_COST } from './contracts'
+import { getArmorUpgradeCost, getWeaponUpgradeCost } from './economy'
 import {
-  MAP_H,
-  MAP_W,
   START_POS,
   TILE,
   clamp,
@@ -84,6 +83,42 @@ export function createDungeonSceneFactory(
       this.pushState()
     }
 
+    spendGoldForWeaponUpgrade() {
+      if (this.run.gameOver) {
+        this.pushLog('Cannot forge weapons after death. Start a new run.')
+        return
+      }
+      const cost = getWeaponUpgradeCost(this.run.weaponLevel)
+      if (this.run.gold < cost) {
+        this.pushLog(`Need ${cost} gold to upgrade weapon.`)
+        return
+      }
+
+      this.run.gold -= cost
+      this.run.weaponLevel += 1
+      this.run.atk += 1
+      this.pushLog(`Weapon upgraded to +${this.run.weaponLevel - 1} ATK (-${cost} gold).`)
+      this.pushState()
+    }
+
+    spendGoldForArmorUpgrade() {
+      if (this.run.gameOver) {
+        this.pushLog('Cannot reinforce armor after death. Start a new run.')
+        return
+      }
+      const cost = getArmorUpgradeCost(this.run.armorLevel)
+      if (this.run.gold < cost) {
+        this.pushLog(`Need ${cost} gold to upgrade armor.`)
+        return
+      }
+
+      this.run.gold -= cost
+      this.run.armorLevel += 1
+      this.run.def += 1
+      this.pushLog(`Armor upgraded to +${this.run.armorLevel - 1} DEF (-${cost} gold).`)
+      this.pushState()
+    }
+
     private bindInput() {
       this.input.keyboard?.on('keydown', (event: KeyboardEvent) => {
         if (event.repeat) return
@@ -103,7 +138,14 @@ export function createDungeonSceneFactory(
       const moving = dx !== 0 || dy !== 0
 
       if (moving) {
-        if (target.x < 0 || target.y < 0 || target.x >= MAP_W || target.y >= MAP_H) return
+        if (
+          target.x < 0 ||
+          target.y < 0 ||
+          target.x >= this.run.floorData.width ||
+          target.y >= this.run.floorData.height
+        ) {
+          return
+        }
         if (this.run.floorData.walls.has(keyOf(target))) {
           this.pushLog('Blocked by stone wall.')
           this.cameraShake(90)

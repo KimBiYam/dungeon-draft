@@ -1,6 +1,14 @@
 import type Phaser from 'phaser'
 
-import { clamp, keyOf, TILE, type Pos, type RunState, MAP_H, MAP_W } from './model'
+import {
+  MAX_MAP_H,
+  MAX_MAP_W,
+  clamp,
+  keyOf,
+  TILE,
+  type Pos,
+  type RunState,
+} from './model'
 import {
   HERO_FRAME_0,
   HERO_IDLE_ANIM,
@@ -39,8 +47,8 @@ export class DungeonVisualSystem {
   drawBoard() {
     this.scene.cameras.main.setBackgroundColor('#0a0a0b')
     const g = this.scene.add.graphics()
-    for (let y = 0; y < MAP_H; y++) {
-      for (let x = 0; x < MAP_W; x++) {
+    for (let y = 0; y < MAX_MAP_H; y++) {
+      for (let x = 0; x < MAX_MAP_W; x++) {
         const tint = (x + y) % 2 === 0 ? 0x101114 : 0x0b0c0f
         g.fillStyle(tint, 1)
         g.fillRect(x * TILE, y * TILE, TILE, TILE)
@@ -91,8 +99,8 @@ export class DungeonVisualSystem {
     this.potionGroup = this.scene.add.group()
     this.goldGroup = this.scene.add.group()
 
-    for (let y = 0; y < MAP_H; y++) {
-      for (let x = 0; x < MAP_W; x++) {
+    for (let y = 0; y < run.floorData.height; y++) {
+      for (let x = 0; x < run.floorData.width; x++) {
         if (run.floorData.walls.has(keyOf({ x, y }))) {
           const wall = this.scene.add.rectangle(
             x * TILE + TILE / 2,
@@ -342,15 +350,16 @@ export class DungeonVisualSystem {
   updateVision(run: RunState) {
     const radius = DungeonVisualSystem.VISION_RADIUS
     const radiusSq = radius * radius
-    for (let y = 0; y < MAP_H; y++) {
-      for (let x = 0; x < MAP_W; x++) {
+    for (let y = 0; y < MAX_MAP_H; y++) {
+      for (let x = 0; x < MAX_MAP_W; x++) {
         const fog = this.fogTiles.get(keyOf({ x, y }))
         if (!fog) continue
 
         const dx = x - run.player.x
         const dy = y - run.player.y
         const inSight = dx * dx + dy * dy <= radiusSq
-        fog.setAlpha(inSight ? 0 : 1)
+        const inFloor = x >= 0 && y >= 0 && x < run.floorData.width && y < run.floorData.height
+        fog.setAlpha(inSight && inFloor ? 0 : 1)
       }
     }
   }
@@ -370,8 +379,8 @@ export class DungeonVisualSystem {
   }
 
   private createFogLayer() {
-    for (let y = 0; y < MAP_H; y++) {
-      for (let x = 0; x < MAP_W; x++) {
+    for (let y = 0; y < MAX_MAP_H; y++) {
+      for (let x = 0; x < MAX_MAP_W; x++) {
         const fog = this.scene.add.rectangle(
           x * TILE + TILE / 2,
           y * TILE + TILE / 2,
