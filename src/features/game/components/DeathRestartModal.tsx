@@ -23,7 +23,7 @@ export function DeathRestartModal({
         onClick={(event) => event.stopPropagation()}
       >
         <h3 className="text-lg font-semibold text-rose-300">You Died</h3>
-        <p className="mt-3 text-sm text-zinc-200">다시 시작할까요?</p>
+        <p className="mt-3 text-sm text-zinc-200">Would you like to start a new run?</p>
         <div className="mt-4 flex gap-3">
           <button
             type="button"
