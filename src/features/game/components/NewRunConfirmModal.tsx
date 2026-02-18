@@ -1,12 +1,10 @@
-import { memo } from 'react'
-
 type NewRunConfirmModalProps = {
   open: boolean
   onCancel: () => void
   onConfirm: () => void
 }
 
-function NewRunConfirmModalImpl({
+export function NewRunConfirmModal({
   open,
   onCancel,
   onConfirm,
@@ -48,5 +46,3 @@ function NewRunConfirmModalImpl({
     </div>
   )
 }
-
-export const NewRunConfirmModal = memo(NewRunConfirmModalImpl)

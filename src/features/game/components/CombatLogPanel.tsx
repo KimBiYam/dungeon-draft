@@ -1,11 +1,9 @@
-import { memo } from 'react'
-
 type CombatLogPanelProps = {
   logs: string[]
   onRequestNewRun: () => void
 }
 
-function CombatLogPanelImpl({ logs, onRequestNewRun }: CombatLogPanelProps) {
+export function CombatLogPanel({ logs, onRequestNewRun }: CombatLogPanelProps) {
   return (
     <aside className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
       <h3 className="mb-3 text-lg font-semibold">Combat Log</h3>
@@ -24,9 +22,3 @@ function CombatLogPanelImpl({ logs, onRequestNewRun }: CombatLogPanelProps) {
     </aside>
   )
 }
-
-const areEqual = (prev: CombatLogPanelProps, next: CombatLogPanelProps) => {
-  return prev.logs === next.logs && prev.onRequestNewRun === next.onRequestNewRun
-}
-
-export const CombatLogPanel = memo(CombatLogPanelImpl, areEqual)

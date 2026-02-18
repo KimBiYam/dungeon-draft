@@ -1,5 +1,3 @@
-import { memo } from 'react'
-
 type AudioControlsProps = {
   muted: boolean
   volume: number
@@ -7,7 +5,7 @@ type AudioControlsProps = {
   onVolumeChange: (volume: number) => void
 }
 
-function AudioControlsImpl({
+export function AudioControls({
   muted,
   volume,
   onToggleMuted,
@@ -38,5 +36,3 @@ function AudioControlsImpl({
     </div>
   )
 }
-
-export const AudioControls = memo(AudioControlsImpl)

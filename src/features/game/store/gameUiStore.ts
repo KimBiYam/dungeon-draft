@@ -26,17 +26,23 @@ type GameUiStore = {
   levelUpChoices: LevelUpChoice[] | null
   audioMuted: boolean
   audioVolume: number
-  uiInputBlocked: boolean
+  uiBlockedByWidget: boolean
+  uiBlockedByStatusPanel: boolean
   api: RoguelikeGameApi | null
   setHud: (state: HudState) => void
   pushLog: (line: string) => void
   newRun: () => void
   setApi: (api: RoguelikeGameApi | null) => void
-  setUiInputBlocked: (blocked: boolean) => void
+  setUiInputBlockedByWidget: (blocked: boolean) => void
+  setUiInputBlockedByStatusPanel: (blocked: boolean) => void
   setLevelUpChoices: (choices: LevelUpChoice[] | null) => void
   pickLevelUpChoice: (choiceId: string) => void
   toggleAudioMuted: () => void
   setAudioVolumePercent: (percent: number) => void
+}
+
+function applyUiInputBlocked(api: RoguelikeGameApi | null, state: Pick<GameUiStore, 'uiBlockedByWidget' | 'uiBlockedByStatusPanel'>) {
+  api?.setUiInputBlocked(state.uiBlockedByWidget || state.uiBlockedByStatusPanel)
 }
 
 export const useGameUiStore = create<GameUiStore>((set, get) => ({
@@ -45,27 +51,33 @@ export const useGameUiStore = create<GameUiStore>((set, get) => ({
   levelUpChoices: null,
   audioMuted: false,
   audioVolume: 100,
-  uiInputBlocked: false,
+  uiBlockedByWidget: false,
+  uiBlockedByStatusPanel: false,
   api: null,
   setHud: (hud) => set({ hud }),
   pushLog: (line) => set((state) => ({ logs: [line, ...state.logs].slice(0, 14) })),
   newRun: () => {
-    const { api } = get()
-    api?.newRun()
+    get().api?.newRun()
     set({ logs: [], levelUpChoices: null })
   },
   setApi: (api) => {
     set({ api })
     if (!api) return
 
-    const { uiInputBlocked, audioMuted, audioVolume } = get()
-    api.setUiInputBlocked(uiInputBlocked)
-    api.setAudioMuted(audioMuted)
-    api.setAudioVolume(clampVolume(audioVolume / 100))
+    const state = get()
+    applyUiInputBlocked(api, state)
+    api.setAudioMuted(state.audioMuted)
+    api.setAudioVolume(clampVolume(state.audioVolume / 100))
   },
-  setUiInputBlocked: (blocked) => {
-    set({ uiInputBlocked: blocked })
-    get().api?.setUiInputBlocked(blocked)
+  setUiInputBlockedByWidget: (blocked) => {
+    set({ uiBlockedByWidget: blocked })
+    const state = get()
+    applyUiInputBlocked(state.api, state)
+  },
+  setUiInputBlockedByStatusPanel: (blocked) => {
+    set({ uiBlockedByStatusPanel: blocked })
+    const state = get()
+    applyUiInputBlocked(state.api, state)
   },
   setLevelUpChoices: (choices) => set({ levelUpChoices: choices }),
   pickLevelUpChoice: (choiceId) => {
