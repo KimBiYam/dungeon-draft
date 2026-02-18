@@ -2,6 +2,7 @@ import { CombatLogPanel } from '../../features/game/components/CombatLogPanel'
 import { GameApiSettingsSync } from '../../features/game/components/GameApiSettingsSync'
 import { DeathRestartModal } from '../../features/game/components/DeathRestartModal'
 import { GameInputBlockSync } from '../../features/game/components/GameInputBlockSync'
+import { InitialClassSelectModal } from '../../features/game/components/InitialClassSelectModal'
 import { LevelUpChoiceModal } from '../../features/game/components/LevelUpChoiceModal'
 import { NewRunConfirmModal } from '../../features/game/components/NewRunConfirmModal'
 import RoguelikeCanvas from '../../features/game/components/RoguelikeCanvas'
@@ -23,6 +24,7 @@ export function RoguelikeGameWidget() {
       </section>
 
       <LevelUpChoiceModal />
+      <InitialClassSelectModal />
       <DeathRestartModal />
       <NewRunConfirmModal />
     </>

@@ -41,10 +41,12 @@ export type AudioStoreState = {
 export type UiStoreState = {
   uiBlockedByWidget: boolean
   uiBlockedByStatusPanel: boolean
+  isInitialClassSelectOpen: boolean
   isNewRunConfirmOpen: boolean
   isDeathRestartOpen: boolean
   setUiInputBlockedByWidget: (blocked: boolean) => void
   setUiInputBlockedByStatusPanel: (blocked: boolean) => void
+  closeInitialClassSelect: () => void
   openNewRunConfirm: () => void
   closeNewRunConfirm: () => void
   openDeathRestart: () => void

@@ -5,6 +5,9 @@ import { useUiStore } from '../store/uiStore'
 
 export function GameInputBlockSync() {
   const levelUpChoices = useSessionStore((state) => state.levelUpChoices)
+  const isInitialClassSelectOpen = useUiStore(
+    (state) => state.isInitialClassSelectOpen,
+  )
   const isNewRunConfirmOpen = useUiStore((state) => state.isNewRunConfirmOpen)
   const isDeathRestartOpen = useUiStore((state) => state.isDeathRestartOpen)
   const setUiInputBlockedByWidget = useUiStore(
@@ -13,9 +16,18 @@ export function GameInputBlockSync() {
 
   useEffect(() => {
     const blocked =
-      Boolean(levelUpChoices?.length) || isNewRunConfirmOpen || isDeathRestartOpen
+      Boolean(levelUpChoices?.length) ||
+      isInitialClassSelectOpen ||
+      isNewRunConfirmOpen ||
+      isDeathRestartOpen
     setUiInputBlockedByWidget(blocked)
-  }, [isDeathRestartOpen, isNewRunConfirmOpen, levelUpChoices, setUiInputBlockedByWidget])
+  }, [
+    isDeathRestartOpen,
+    isInitialClassSelectOpen,
+    isNewRunConfirmOpen,
+    levelUpChoices,
+    setUiInputBlockedByWidget,
+  ])
 
   return null
 }
