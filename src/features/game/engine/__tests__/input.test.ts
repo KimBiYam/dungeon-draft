@@ -19,6 +19,13 @@ describe('resolveMoveFromKey', () => {
     expect(inputMapper.resolveMoveFromKey('d')).toEqual({ x: 1, y: 0 })
   })
 
+  it('maps korean 2-set layout keys to movement deltas', () => {
+    expect(inputMapper.resolveMoveFromKey('ㅈ')).toEqual({ x: 0, y: -1 })
+    expect(inputMapper.resolveMoveFromKey('ㅁ')).toEqual({ x: -1, y: 0 })
+    expect(inputMapper.resolveMoveFromKey('ㄴ')).toEqual({ x: 0, y: 1 })
+    expect(inputMapper.resolveMoveFromKey('ㅇ')).toEqual({ x: 1, y: 0 })
+  })
+
   it('maps space key to wait action', () => {
     expect(inputMapper.resolveMoveFromKey(' ')).toEqual({ x: 0, y: 0 })
   })
