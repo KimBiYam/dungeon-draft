@@ -24,6 +24,7 @@ export function useRoguelikeUi() {
   const [hud, setHud] = useState<HudState>(initialHud)
   const [logs, setLogs] = useState<string[]>([])
   const apiRef = useRef<RoguelikeGameApi | null>(null)
+  const uiInputBlockedRef = useRef(false)
 
   const status = useMemo(() => {
     if (hud.gameOver) {
@@ -43,6 +44,12 @@ export function useRoguelikeUi() {
 
   const setApi = useCallback((api: RoguelikeGameApi | null) => {
     apiRef.current = api
+    apiRef.current?.setUiInputBlocked(uiInputBlockedRef.current)
+  }, [])
+
+  const setUiInputBlocked = useCallback((blocked: boolean) => {
+    uiInputBlockedRef.current = blocked
+    apiRef.current?.setUiInputBlocked(blocked)
   }, [])
 
   const spendGoldForHeal = useCallback(() => {
@@ -67,6 +74,7 @@ export function useRoguelikeUi() {
     setHud,
     pushLog,
     newRun,
+    setUiInputBlocked,
     spendGoldForHeal,
     spendGoldForWeaponUpgrade,
     spendGoldForArmorUpgrade,

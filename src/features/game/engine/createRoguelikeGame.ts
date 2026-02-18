@@ -30,6 +30,7 @@ export async function createRoguelikeGame(
 
   return {
     newRun: () => scene.newRun(),
+    setUiInputBlocked: (blocked: boolean) => scene.setUiInputBlocked(blocked),
     spendGoldForHeal: () => scene.spendGoldForHeal(),
     spendGoldForWeaponUpgrade: () => scene.spendGoldForWeaponUpgrade(),
     spendGoldForArmorUpgrade: () => scene.spendGoldForArmorUpgrade(),

@@ -1,18 +1,18 @@
-import { memo } from "react";
+import { memo } from 'react'
 
 type CombatLogPanelProps = {
-  logs: string[];
-  canSpendGoldForHeal: boolean;
-  goldHealCost: number;
-  onSpendGoldForHeal: () => void;
-  canUpgradeWeapon: boolean;
-  canUpgradeArmor: boolean;
-  weaponUpgradeCost: number;
-  armorUpgradeCost: number;
-  onUpgradeWeapon: () => void;
-  onUpgradeArmor: () => void;
-  onNewRun: () => void;
-};
+  logs: string[]
+  canSpendGoldForHeal: boolean
+  goldHealCost: number
+  onSpendGoldForHeal: () => void
+  canUpgradeWeapon: boolean
+  canUpgradeArmor: boolean
+  weaponUpgradeCost: number
+  armorUpgradeCost: number
+  onUpgradeWeapon: () => void
+  onUpgradeArmor: () => void
+  onRequestNewRun: () => void
+}
 
 function CombatLogPanelImpl({
   logs,
@@ -25,7 +25,7 @@ function CombatLogPanelImpl({
   armorUpgradeCost,
   onUpgradeWeapon,
   onUpgradeArmor,
-  onNewRun,
+  onRequestNewRun,
 }: CombatLogPanelProps) {
   return (
     <aside className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
@@ -61,13 +61,13 @@ function CombatLogPanelImpl({
       </button>
       <button
         type="button"
-        onClick={onNewRun}
+        onClick={onRequestNewRun}
         className="mt-3 w-full rounded-md border border-cyan-400/50 px-3 py-2 text-sm text-cyan-200 transition hover:bg-cyan-400/10"
       >
         New Run
       </button>
     </aside>
-  );
+  )
 }
 
 const areEqual = (prev: CombatLogPanelProps, next: CombatLogPanelProps) => {
@@ -82,8 +82,8 @@ const areEqual = (prev: CombatLogPanelProps, next: CombatLogPanelProps) => {
     prev.armorUpgradeCost === next.armorUpgradeCost &&
     prev.onUpgradeWeapon === next.onUpgradeWeapon &&
     prev.onUpgradeArmor === next.onUpgradeArmor &&
-    prev.onNewRun === next.onNewRun
-  );
-};
+    prev.onRequestNewRun === next.onRequestNewRun
+  )
+}
 
-export const CombatLogPanel = memo(CombatLogPanelImpl, areEqual);
+export const CombatLogPanel = memo(CombatLogPanelImpl, areEqual)

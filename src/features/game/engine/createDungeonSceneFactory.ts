@@ -35,6 +35,7 @@ export function createDungeonSceneFactory(
 ) {
   return class DungeonScene extends Phaser.Scene {
     private run: RunState = createInitialRun()
+    private uiInputBlocked = false
     private readonly inputMapper = new InputMapper()
     private readonly heroRole = new HeroRoleService(randomInt)
     private readonly monsterRole = new MonsterRoleService(randomInt)
@@ -60,6 +61,10 @@ export function createDungeonSceneFactory(
       this.visuals.rebuildFloorObjects(this.run)
       callbacks.onLog('New run started.')
       this.pushState()
+    }
+
+    setUiInputBlocked(blocked: boolean) {
+      this.uiInputBlocked = blocked
     }
 
     spendGoldForHeal() {
@@ -127,6 +132,8 @@ export function createDungeonSceneFactory(
         if (!command) return
 
         event.preventDefault()
+        if (this.uiInputBlocked) return
+
         if (command.type === 'upgradeWeapon') {
           this.spendGoldForWeaponUpgrade()
           return

@@ -9,6 +9,7 @@ export type CreateRoguelikeGameOptions = {
 
 export type RoguelikeGameApi = {
   newRun: () => void
+  setUiInputBlocked: (blocked: boolean) => void
   spendGoldForHeal: () => void
   spendGoldForWeaponUpgrade: () => void
   spendGoldForArmorUpgrade: () => void
