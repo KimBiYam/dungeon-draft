@@ -1,95 +1,28 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-
 import { CombatLogPanel } from '../../features/game/components/CombatLogPanel'
 import { DeathRestartModal } from '../../features/game/components/DeathRestartModal'
+import { GameInputBlockSync } from '../../features/game/components/GameInputBlockSync'
 import { LevelUpChoiceModal } from '../../features/game/components/LevelUpChoiceModal'
 import { NewRunConfirmModal } from '../../features/game/components/NewRunConfirmModal'
 import RoguelikeCanvas from '../../features/game/components/RoguelikeCanvas'
 import { RoguelikeStatusPanel } from '../../features/game/components/RoguelikeStatusPanel'
-import { useGameUiStore } from '../../features/game/store/gameUiStore'
 
 export function RoguelikeGameWidget() {
-  const [isNewRunConfirmOpen, setIsNewRunConfirmOpen] = useState(false)
-  const [isDeathRestartOpen, setIsDeathRestartOpen] = useState(false)
-
-  const hud = useGameUiStore((state) => state.hud)
-  const logs = useGameUiStore((state) => state.logs)
-  const levelUpChoices = useGameUiStore((state) => state.levelUpChoices)
-  const setHud = useGameUiStore((state) => state.setHud)
-  const pushLog = useGameUiStore((state) => state.pushLog)
-  const newRun = useGameUiStore((state) => state.newRun)
-  const setUiInputBlockedByWidget = useGameUiStore(
-    (state) => state.setUiInputBlockedByWidget,
-  )
-  const setLevelUpChoices = useGameUiStore((state) => state.setLevelUpChoices)
-  const pickLevelUpChoice = useGameUiStore((state) => state.pickLevelUpChoice)
-  const setApi = useGameUiStore((state) => state.setApi)
-
-  const status = useMemo(() => {
-    if (hud.gameOver) {
-      return `Run Over on Floor ${hud.floor}`
-    }
-    return `Floor ${hud.floor} · ${hud.enemiesLeft} enemies`
-  }, [hud.floor, hud.enemiesLeft, hud.gameOver])
-
-  const prevGameOverRef = useRef(hud.gameOver)
-
-  useEffect(() => {
-    if (!prevGameOverRef.current && hud.gameOver) {
-      setIsDeathRestartOpen(true)
-    }
-    if (!hud.gameOver) {
-      setIsDeathRestartOpen(false)
-    }
-    prevGameOverRef.current = hud.gameOver
-  }, [hud.gameOver])
-
-  const isAnyModalOpen = useMemo(
-    () => isNewRunConfirmOpen || isDeathRestartOpen || Boolean(levelUpChoices?.length),
-    [isNewRunConfirmOpen, isDeathRestartOpen, levelUpChoices],
-  )
-
-  useEffect(() => {
-    setUiInputBlockedByWidget(isAnyModalOpen)
-  }, [isAnyModalOpen, setUiInputBlockedByWidget])
-
-  const requestNewRun = useCallback(() => setIsNewRunConfirmOpen(true), [])
-  const cancelNewRun = useCallback(() => setIsNewRunConfirmOpen(false), [])
-  const closeDeathRestart = useCallback(() => setIsDeathRestartOpen(false), [])
-  const confirmNewRun = useCallback(() => {
-    setIsNewRunConfirmOpen(false)
-    setIsDeathRestartOpen(false)
-    newRun()
-  }, [newRun])
-
   return (
     <>
-      <RoguelikeStatusPanel hud={hud} status={status} />
+      <GameInputBlockSync />
+      <RoguelikeStatusPanel />
 
       <section className="grid gap-5 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <RoguelikeCanvas
-            onState={setHud}
-            onLog={pushLog}
-            onLevelUpChoices={setLevelUpChoices}
-            onReady={setApi}
-          />
+          <RoguelikeCanvas />
         </div>
 
-        <CombatLogPanel logs={logs} onRequestNewRun={requestNewRun} />
+        <CombatLogPanel />
       </section>
 
-      <LevelUpChoiceModal choices={levelUpChoices} onPick={pickLevelUpChoice} />
-      <DeathRestartModal
-        open={isDeathRestartOpen}
-        onClose={closeDeathRestart}
-        onRestart={confirmNewRun}
-      />
-      <NewRunConfirmModal
-        open={isNewRunConfirmOpen}
-        onCancel={cancelNewRun}
-        onConfirm={confirmNewRun}
-      />
+      <LevelUpChoiceModal />
+      <DeathRestartModal />
+      <NewRunConfirmModal />
     </>
   )
 }

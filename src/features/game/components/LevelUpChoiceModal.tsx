@@ -1,11 +1,9 @@
-import type { LevelUpChoice } from '../engine/createRoguelikeGame'
+import { useGameUiStore } from '../store/gameUiStore'
 
-type LevelUpChoiceModalProps = {
-  choices: LevelUpChoice[] | null
-  onPick: (choiceId: string) => void
-}
+export function LevelUpChoiceModal() {
+  const choices = useGameUiStore((state) => state.levelUpChoices)
+  const pickLevelUpChoice = useGameUiStore((state) => state.pickLevelUpChoice)
 
-export function LevelUpChoiceModal({ choices, onPick }: LevelUpChoiceModalProps) {
   if (!choices || choices.length === 0) {
     return null
   }
@@ -20,7 +18,7 @@ export function LevelUpChoiceModal({ choices, onPick }: LevelUpChoiceModalProps)
             <button
               key={choice.id}
               type="button"
-              onClick={() => onPick(choice.id)}
+              onClick={() => pickLevelUpChoice(choice.id)}
               className="rounded-lg border border-cyan-300/30 bg-zinc-950/70 p-4 text-left transition hover:border-cyan-300/70 hover:bg-cyan-500/10"
             >
               <p className="text-xs text-cyan-300">{index + 1} (NumPad {index + 1})</p>

@@ -1,18 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 
-import type { HudState } from '../engine/createRoguelikeGame'
 import { useGameUiStore } from '../store/gameUiStore'
 import { AudioControls } from './AudioControls'
 import { HelpModal } from './HelpModal'
 import { StatCard } from './StatCard'
 
-type RoguelikeStatusPanelProps = {
-  hud: HudState
-  status: string
-}
-
-export function RoguelikeStatusPanel({ hud, status }: RoguelikeStatusPanelProps) {
+export function RoguelikeStatusPanel() {
   const [isHelpOpen, setIsHelpOpen] = useState(false)
+  const hud = useGameUiStore((state) => state.hud)
   const audioMuted = useGameUiStore((state) => state.audioMuted)
   const audioVolume = useGameUiStore((state) => state.audioVolume)
   const toggleAudioMuted = useGameUiStore((state) => state.toggleAudioMuted)
@@ -26,13 +21,12 @@ export function RoguelikeStatusPanel({ hud, status }: RoguelikeStatusPanelProps)
     return () => setUiInputBlockedByStatusPanel(false)
   }, [isHelpOpen, setUiInputBlockedByStatusPanel])
 
-  const helpHandlers = useMemo(
-    () => ({
-      open: () => setIsHelpOpen(true),
-      close: () => setIsHelpOpen(false),
-    }),
-    [],
-  )
+  const status = useMemo(() => {
+    if (hud.gameOver) {
+      return `Run Over on Floor ${hud.floor}`
+    }
+    return `Floor ${hud.floor} · ${hud.enemiesLeft} enemies`
+  }, [hud.floor, hud.enemiesLeft, hud.gameOver])
 
   return (
     <>
@@ -48,7 +42,7 @@ export function RoguelikeStatusPanel({ hud, status }: RoguelikeStatusPanelProps)
             />
             <button
               type="button"
-              onClick={helpHandlers.open}
+              onClick={() => setIsHelpOpen(true)}
               className="rounded-md border border-cyan-300/40 px-3 py-1 text-xs font-semibold text-cyan-100 transition hover:bg-cyan-400/10"
             >
               Help
@@ -63,7 +57,7 @@ export function RoguelikeStatusPanel({ hud, status }: RoguelikeStatusPanelProps)
           <StatCard label="XP" value={`${hud.xp} / ${hud.nextXp}`} />
         </div>
       </section>
-      <HelpModal open={isHelpOpen} onClose={helpHandlers.close} />
+      <HelpModal open={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
     </>
   )
 }

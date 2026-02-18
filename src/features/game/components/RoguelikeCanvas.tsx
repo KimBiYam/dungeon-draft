@@ -1,28 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
 
-import {
-  createRoguelikeGame,
-  type HudState,
-  type LevelUpChoice,
-  type RoguelikeGameApi,
-} from '../engine/createRoguelikeGame'
+import { createRoguelikeGame } from '../engine/createRoguelikeGame'
+import { useGameUiStore } from '../store/gameUiStore'
 
-type RoguelikeCanvasProps = {
-  onState: (state: HudState) => void
-  onLog: (message: string) => void
-  onLevelUpChoices: (choices: LevelUpChoice[] | null) => void
-  onReady: (api: RoguelikeGameApi | null) => void
-}
-
-export default function RoguelikeCanvas({
-  onState,
-  onLog,
-  onLevelUpChoices,
-  onReady,
-}: RoguelikeCanvasProps) {
+export default function RoguelikeCanvas() {
   const mountRef = useRef<HTMLDivElement | null>(null)
   const [bootFailed, setBootFailed] = useState(false)
   const [ready, setReady] = useState(false)
+
+  const setHud = useGameUiStore((state) => state.setHud)
+  const pushLog = useGameUiStore((state) => state.pushLog)
+  const setLevelUpChoices = useGameUiStore((state) => state.setLevelUpChoices)
+  const setApi = useGameUiStore((state) => state.setApi)
 
   useEffect(() => {
     if (!mountRef.current) {
@@ -30,21 +19,19 @@ export default function RoguelikeCanvas({
     }
 
     let disposed = false
-    let api: RoguelikeGameApi | null = null
 
     void createRoguelikeGame({
       mount: mountRef.current,
-      onState,
-      onLog,
-      onLevelUpChoices,
+      onState: setHud,
+      onLog: pushLog,
+      onLevelUpChoices: setLevelUpChoices,
     })
       .then((instance) => {
         if (disposed) {
           instance.destroy()
           return
         }
-        api = instance
-        onReady(instance)
+        setApi(instance)
         setReady(true)
       })
       .catch(() => {
@@ -53,10 +40,9 @@ export default function RoguelikeCanvas({
 
     return () => {
       disposed = true
-      onReady(null)
-      api?.destroy()
+      setApi(null)
     }
-  }, [])
+  }, [pushLog, setApi, setHud, setLevelUpChoices])
 
   return (
     <div className="relative overflow-hidden rounded-xl border border-zinc-700 bg-black">

@@ -1,9 +1,9 @@
-type CombatLogPanelProps = {
-  logs: string[]
-  onRequestNewRun: () => void
-}
+import { useGameUiStore } from '../store/gameUiStore'
 
-export function CombatLogPanel({ logs, onRequestNewRun }: CombatLogPanelProps) {
+export function CombatLogPanel() {
+  const logs = useGameUiStore((state) => state.logs)
+  const openNewRunConfirm = useGameUiStore((state) => state.openNewRunConfirm)
+
   return (
     <aside className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
       <h3 className="mb-3 text-lg font-semibold">Combat Log</h3>
@@ -14,7 +14,7 @@ export function CombatLogPanel({ logs, onRequestNewRun }: CombatLogPanelProps) {
       </ul>
       <button
         type="button"
-        onClick={onRequestNewRun}
+        onClick={openNewRunConfirm}
         className="mt-4 w-full rounded-md border border-cyan-400/50 px-3 py-2 text-sm text-cyan-200 transition hover:bg-cyan-400/10"
       >
         New Run
