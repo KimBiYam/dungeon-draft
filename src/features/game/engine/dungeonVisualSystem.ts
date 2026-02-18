@@ -35,9 +35,9 @@ export class DungeonVisualSystem {
   private wallGroup?: Phaser.GameObjects.Group
   private enemyGroup?: Phaser.GameObjects.Group
   private potionGroup?: Phaser.GameObjects.Group
-  private exitOrb?: Phaser.GameObjects.Arc
+  private exitOrb?: Phaser.GameObjects.Container
   private enemyVisuals = new Map<string, EnemyVisual>()
-  private potionVisuals = new Map<string, Phaser.GameObjects.Arc>()
+  private potionVisuals = new Map<string, Phaser.GameObjects.Container>()
   private fogTiles = new Map<string, Phaser.GameObjects.Rectangle>()
 
   constructor(private readonly scene: Phaser.Scene) {}
@@ -82,6 +82,7 @@ export class DungeonVisualSystem {
     this.potionGroup?.clear(true, true)
     if (this.exitOrb) {
       this.scene.tweens.killTweensOf(this.exitOrb)
+      this.scene.tweens.killTweensOf(this.exitOrb.list)
       this.exitOrb.destroy()
       this.exitOrb = undefined
     }
@@ -111,24 +112,12 @@ export class DungeonVisualSystem {
     }
 
     for (const pos of run.floorData.potions) {
-      const potion = this.scene.add.circle(
-        pos.x * TILE + TILE / 2,
-        pos.y * TILE + TILE / 2,
-        10,
-        0x22c55e,
-        0.95,
-      )
+      const potion = this.createPotionVisual(pos)
       this.potionGroup.add(potion)
       this.potionVisuals.set(keyOf(pos), potion)
     }
 
-    const exitOrb = this.scene.add.circle(
-      run.floorData.exit.x * TILE + TILE / 2,
-      run.floorData.exit.y * TILE + TILE / 2,
-      12,
-      0x8b5cf6,
-      0.9,
-    )
+    const exitOrb = this.createPortalVisual(run.floorData.exit)
     this.exitOrb = exitOrb
 
     for (const enemy of run.floorData.enemies) {
@@ -367,5 +356,58 @@ export class DungeonVisualSystem {
         this.fogTiles.set(keyOf({ x, y }), fog)
       }
     }
+  }
+
+  private createPotionVisual(pos: Pos) {
+    const x = pos.x * TILE + TILE / 2
+    const y = pos.y * TILE + TILE / 2
+    const bottle = this.scene.add.ellipse(0, 3, 16, 18, 0xd1fae5, 0.9)
+    bottle.setStrokeStyle(1, 0x99f6e4, 0.8)
+    const liquid = this.scene.add.ellipse(0, 6, 10, 8, 0x22c55e, 0.95)
+    const neck = this.scene.add.rectangle(0, -5, 8, 6, 0xccfbf1, 0.9)
+    neck.setStrokeStyle(1, 0x99f6e4, 0.8)
+    const cork = this.scene.add.rectangle(0, -9, 6, 3, 0x92400e, 0.95)
+    const shine = this.scene.add.ellipse(-4, 2, 3, 6, 0xffffff, 0.55)
+
+    const container = this.scene.add.container(x, y, [bottle, liquid, neck, cork, shine])
+    container.setSize(20, 24)
+    container.setDepth(2)
+    container.setPosition(x, y)
+    return container
+  }
+
+  private createPortalVisual(pos: Pos) {
+    const x = pos.x * TILE + TILE / 2
+    const y = pos.y * TILE + TILE / 2
+    const outer = this.scene.add.ellipse(0, 0, 28, 28, 0x7c3aed, 0.45)
+    outer.setStrokeStyle(2, 0xa78bfa, 0.9)
+    const ring = this.scene.add.ellipse(0, 0, 20, 20, 0x4c1d95, 0.75)
+    ring.setStrokeStyle(2, 0xc4b5fd, 0.85)
+    const core = this.scene.add.ellipse(0, 0, 12, 12, 0xddd6fe, 0.9)
+    const sparkA = this.scene.add.rectangle(0, 0, 2, 10, 0xe9d5ff, 0.9)
+    const sparkB = this.scene.add.rectangle(0, 0, 10, 2, 0xe9d5ff, 0.9)
+
+    const container = this.scene.add.container(x, y, [outer, ring, core, sparkA, sparkB])
+    container.setSize(28, 28)
+    container.setDepth(3)
+    container.setPosition(x, y)
+
+    this.scene.tweens.add({
+      targets: container,
+      angle: 360,
+      duration: 2800,
+      repeat: -1,
+      ease: 'Linear',
+    })
+    this.scene.tweens.add({
+      targets: [outer, core],
+      alpha: { from: 0.55, to: 0.95 },
+      duration: 760,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.InOut',
+    })
+
+    return container
   }
 }
