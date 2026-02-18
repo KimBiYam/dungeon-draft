@@ -18,6 +18,7 @@ import { HeroRoleService } from './hero'
 import { InputMapper } from './input'
 import { MonsterRoleService } from './monster'
 import { DungeonVisualSystem } from './dungeonVisualSystem'
+import { RetroSfx } from './audio'
 import {
   HERO_ATTACK_ANIM,
   HERO_HURT_ANIM,
@@ -40,6 +41,9 @@ export function createDungeonSceneFactory(
     private readonly heroRole = new HeroRoleService(randomInt)
     private readonly monsterRole = new MonsterRoleService(randomInt)
     private readonly visuals = new DungeonVisualSystem(this)
+    private readonly audio = new RetroSfx(
+      () => (this.sound as unknown as { context?: AudioContext }).context,
+    )
 
     constructor() {
       super('dungeon')
@@ -53,6 +57,7 @@ export function createDungeonSceneFactory(
       this.bindInput()
       this.visuals.rebuildFloorObjects(this.run)
       callbacks.onLog('Run started. Reach the portal to descend.')
+      this.audio.play('runStart')
       this.pushState()
     }
 
@@ -60,6 +65,7 @@ export function createDungeonSceneFactory(
       this.run = createInitialRun()
       this.visuals.rebuildFloorObjects(this.run)
       callbacks.onLog('New run started.')
+      this.audio.play('newRun')
       this.pushState()
     }
 
@@ -85,6 +91,7 @@ export function createDungeonSceneFactory(
       const healed = Math.min(GOLD_HEAL_AMOUNT, this.run.maxHp - this.run.hp)
       this.run.hp += healed
       this.pushLog(`Mended wounds for ${healed} HP (-${GOLD_HEAL_COST} gold).`)
+      this.audio.play('pickupPotion')
       this.pushState()
     }
 
@@ -103,6 +110,7 @@ export function createDungeonSceneFactory(
       this.run.weaponLevel += 1
       this.run.atk += 1
       this.pushLog(`Weapon upgraded to +${this.run.weaponLevel - 1} ATK (-${cost} gold).`)
+      this.audio.play('upgrade')
       this.pushState()
     }
 
@@ -121,6 +129,7 @@ export function createDungeonSceneFactory(
       this.run.armorLevel += 1
       this.run.def += 1
       this.pushLog(`Armor upgraded to +${this.run.armorLevel - 1} DEF (-${cost} gold).`)
+      this.audio.play('upgrade')
       this.pushState()
     }
 
@@ -163,6 +172,7 @@ export function createDungeonSceneFactory(
         }
         if (this.run.floorData.walls.has(keyOf(target))) {
           this.pushLog('Blocked by stone wall.')
+          this.audio.play('wallBlocked')
           this.cameraShake(90)
           return
         }
@@ -171,6 +181,7 @@ export function createDungeonSceneFactory(
         if (enemy) {
           const dmg = this.heroRole.calculateAttackDamage(this.run.atk)
           this.playOnceThen(this.visuals.getPlayerSprite(), HERO_ATTACK_ANIM, HERO_IDLE_ANIM)
+          this.audio.play('heroAttack')
           enemy.hp -= dmg
           this.pushLog(`You slash for ${dmg}.`)
           this.hitFlash(target, 0xfb7185)
@@ -188,9 +199,11 @@ export function createDungeonSceneFactory(
             this.run.xp += xp
             this.run.gold += gold
             this.pushLog(`${enemy.monsterName} down. +${xp} XP, +${gold} gold.`)
+            this.audio.play('enemyDefeat')
             this.cameraShake(120)
             this.visuals.destroyEnemyVisual(enemy.id)
           } else {
+            this.audio.play('enemyHit')
             this.visuals.updateEnemyHpBar(this.run, enemy.id)
           }
         } else {
@@ -202,6 +215,7 @@ export function createDungeonSceneFactory(
             const heal = randomInt(7, 12)
             this.run.hp = clamp(this.run.hp + heal, 0, this.run.maxHp)
             this.pushLog(`Potion! +${heal} HP.`)
+            this.audio.play('pickupPotion')
             this.visuals.consumePotionVisual(target)
           }
 
@@ -211,6 +225,7 @@ export function createDungeonSceneFactory(
             const loot = randomInt(6, 13)
             this.run.gold += loot
             this.pushLog(`Looted ${loot} gold.`)
+            this.audio.play('pickupGold')
             this.visuals.consumeGoldVisual(target)
           }
 
@@ -221,6 +236,7 @@ export function createDungeonSceneFactory(
             this.run.floorData = createFloor(this.run.floor)
             this.run.hp = clamp(this.run.hp + 6, 0, this.run.maxHp)
             this.pushLog(`Descended to floor ${this.run.floor}.`)
+            this.audio.play('descendFloor')
             this.visuals.rebuildFloorObjects(this.run)
             this.pushState()
             return
@@ -235,9 +251,12 @@ export function createDungeonSceneFactory(
         this.pushLog('You hold your stance.')
       }
 
+      let didLevelUp = false
       for (const levelUpLog of this.heroRole.applyLevelUps(this.run)) {
+        didLevelUp = true
         this.pushLog(levelUpLog)
       }
+      if (didLevelUp) this.audio.play('levelUp')
 
       this.enemyPhase()
       this.run.turn += 1
@@ -261,12 +280,14 @@ export function createDungeonSceneFactory(
           const dmg = this.monsterRole.calculateAttackDamage(enemy.atk, this.run.def)
           this.run.hp -= dmg
           this.pushLog(`${enemy.monsterName} hits for ${dmg}.`)
+          this.audio.play('heroHit')
           this.hitFlash(this.run.player, 0x38bdf8)
           this.playOnceThen(this.visuals.getPlayerSprite(), HERO_HURT_ANIM, HERO_IDLE_ANIM)
           if (this.run.hp <= 0) {
             this.run.hp = 0
             this.run.gameOver = true
             this.pushLog(`You died on floor ${this.run.floor}. Press New Run.`)
+            this.audio.play('death')
             this.cameraShake(200)
             return
           }
