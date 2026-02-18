@@ -1,7 +1,7 @@
 # Dungeon Draft
 
-Phaser + React(TanStack Start) 기반의 로그라이크 게임입니다.
-던전을 내려가며 전투하고, 레벨업 때마다 3개의 랜덤 카드 중 하나를 선택해 빌드를 성장시키는 구조입니다.
+Dungeon Draft is a roguelike built with Phaser and React (TanStack Start).
+Fight your way down through dungeon floors and grow your build by choosing 1 of 3 random cards every time you level up.
 
 ## Core Gameplay
 
