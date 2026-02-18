@@ -45,4 +45,16 @@ describe('resolveMoveFromKey', () => {
   it('returns null command for unsupported key', () => {
     expect(inputMapper.resolveCommand('q')).toBeNull()
   })
+
+  it('maps level-up card keys to 0-based choice indexes', () => {
+    expect(inputMapper.resolveLevelUpChoiceIndex('1', 'Digit1')).toBe(0)
+    expect(inputMapper.resolveLevelUpChoiceIndex('2', 'Digit2')).toBe(1)
+    expect(inputMapper.resolveLevelUpChoiceIndex('3', 'Digit3')).toBe(2)
+    expect(inputMapper.resolveLevelUpChoiceIndex('1', 'Numpad1')).toBe(0)
+  })
+
+  it('returns null for non card-select keys', () => {
+    expect(inputMapper.resolveLevelUpChoiceIndex('w', 'KeyW')).toBeNull()
+    expect(inputMapper.resolveLevelUpChoiceIndex('4', 'Digit4')).toBeNull()
+  })
 })

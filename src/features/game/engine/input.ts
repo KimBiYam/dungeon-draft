@@ -21,6 +21,13 @@ export class InputMapper {
     return KEY_TO_MOVE[key] ?? KEY_TO_MOVE[key.toLowerCase()] ?? null
   }
 
+  resolveLevelUpChoiceIndex(key: string, code: string): number | null {
+    if (code === 'Digit1' || code === 'Numpad1' || key === '1') return 0
+    if (code === 'Digit2' || code === 'Numpad2' || key === '2') return 1
+    if (code === 'Digit3' || code === 'Numpad3' || key === '3') return 2
+    return null
+  }
+
   resolveCommand(key: string) {
     const move = this.resolveMoveFromKey(key)
     if (!move) return null

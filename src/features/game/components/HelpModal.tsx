@@ -21,7 +21,7 @@ export function HelpModal({ open, onClose }: HelpModalProps) {
         <ul className="mt-3 space-y-2 text-sm text-zinc-200">
           <li>`WASD` / Arrow Keys: Move</li>
           <li>`Space`: Wait a turn</li>
-          <li>Level up: pick one reward card with mouse click</li>
+          <li>Level up: click card or press `1` / `2` / `3`</li>
         </ul>
         <button
           type="button"

@@ -104,7 +104,7 @@ type AudioContextLike = {
 
 export class RetroSfx {
   private muted = false
-  private masterVolume = 0.8
+  private masterVolume = 1
 
   constructor(private readonly getContext: () => AudioContextLike | undefined) {}
 

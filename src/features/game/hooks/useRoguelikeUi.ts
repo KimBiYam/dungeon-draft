@@ -25,11 +25,11 @@ export function useRoguelikeUi() {
   const [logs, setLogs] = useState<string[]>([])
   const [levelUpChoices, setLevelUpChoicesState] = useState<LevelUpChoice[] | null>(null)
   const [audioMuted, setAudioMutedState] = useState(false)
-  const [audioVolume, setAudioVolumeState] = useState(80)
+  const [audioVolume, setAudioVolumeState] = useState(100)
   const apiRef = useRef<RoguelikeGameApi | null>(null)
   const uiInputBlockedRef = useRef(false)
   const audioMutedRef = useRef(false)
-  const audioVolumeRef = useRef(0.8)
+  const audioVolumeRef = useRef(1)
 
   const status = useMemo(() => {
     if (hud.gameOver) {

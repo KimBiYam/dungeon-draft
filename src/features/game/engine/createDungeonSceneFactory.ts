@@ -113,6 +113,17 @@ export function createDungeonSceneFactory(
       this.input.keyboard?.on('keydown', (event: KeyboardEvent) => {
         if (event.repeat) return
 
+        const levelUpChoiceIndex = this.inputMapper.resolveLevelUpChoiceIndex(
+          event.key,
+          event.code,
+        )
+        if (this.activeLevelUpChoices && levelUpChoiceIndex !== null) {
+          event.preventDefault()
+          const choice = this.activeLevelUpChoices[levelUpChoiceIndex]
+          if (choice) this.chooseLevelUpReward(choice.id)
+          return
+        }
+
         const command = this.inputMapper.resolveCommand(event.key)
         if (!command) return
 
