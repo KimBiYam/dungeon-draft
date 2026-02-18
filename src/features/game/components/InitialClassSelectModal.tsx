@@ -1,7 +1,6 @@
 import { useState } from 'react'
 
 import { HERO_CLASSES } from '../engine/model'
-import { useRuntimeStore } from '../store/runtimeStore'
 import { useSessionStore } from '../store/sessionStore'
 import { useUiStore } from '../store/uiStore'
 
@@ -10,7 +9,6 @@ export function InitialClassSelectModal() {
   const closeInitialClassSelect = useUiStore((state) => state.closeInitialClassSelect)
   const currentHeroClass = useSessionStore((state) => state.heroClass)
   const setHeroClass = useSessionStore((state) => state.setHeroClass)
-  const newRun = useRuntimeStore((state) => state.newRun)
   const [selected, setSelected] = useState(currentHeroClass)
 
   if (!isOpen) {
@@ -19,7 +17,6 @@ export function InitialClassSelectModal() {
 
   const startRun = () => {
     setHeroClass(selected)
-    newRun(selected)
     closeInitialClassSelect()
   }
 
