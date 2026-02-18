@@ -7,7 +7,6 @@ import {
   clamp,
   keyOf,
   TILE,
-  type TrapTile,
   type Pos,
   type RunState,
 } from './model'
@@ -37,12 +36,10 @@ export class DungeonVisualSystem {
   private wallGroup?: Phaser.GameObjects.Group
   private enemyGroup?: Phaser.GameObjects.Group
   private potionGroup?: Phaser.GameObjects.Group
-  private trapGroup?: Phaser.GameObjects.Group
   private chestGroup?: Phaser.GameObjects.Group
   private exitOrb?: Phaser.GameObjects.Container
   private enemyVisuals = new Map<string, EnemyVisual>()
   private potionVisuals = new Map<string, Phaser.GameObjects.Container>()
-  private trapVisuals = new Map<string, Phaser.GameObjects.Container>()
   private chestVisuals = new Map<string, Phaser.GameObjects.Container>()
   private fogTiles = new Map<string, Phaser.GameObjects.Rectangle>()
 
@@ -86,7 +83,6 @@ export class DungeonVisualSystem {
     this.wallGroup?.clear(true, true)
     this.enemyGroup?.clear(true, true)
     this.potionGroup?.clear(true, true)
-    this.trapGroup?.clear(true, true)
     this.chestGroup?.clear(true, true)
     if (this.exitOrb) {
       this.scene.tweens.killTweensOf(this.exitOrb)
@@ -96,7 +92,6 @@ export class DungeonVisualSystem {
     }
     this.enemyVisuals.clear()
     this.potionVisuals.clear()
-    this.trapVisuals.clear()
     this.chestVisuals.clear()
     this.fogTiles.forEach((tile) => tile.destroy())
     this.fogTiles.clear()
@@ -104,7 +99,6 @@ export class DungeonVisualSystem {
     this.wallGroup = this.scene.add.group()
     this.enemyGroup = this.scene.add.group()
     this.potionGroup = this.scene.add.group()
-    this.trapGroup = this.scene.add.group()
     this.chestGroup = this.scene.add.group()
 
     for (let y = 0; y < run.floorData.height; y++) {
@@ -127,11 +121,6 @@ export class DungeonVisualSystem {
       const potion = this.createPotionVisual(pos)
       this.potionGroup.add(potion)
       this.potionVisuals.set(keyOf(pos), potion)
-    }
-    for (const trap of run.floorData.traps) {
-      const trapVisual = this.createTrapVisual(trap)
-      this.trapGroup.add(trapVisual)
-      this.trapVisuals.set(keyOf(trap.pos), trapVisual)
     }
     for (const chest of run.floorData.chests) {
       const chestVisual = this.createChestVisual(chest)
@@ -217,13 +206,8 @@ export class DungeonVisualSystem {
   }
 
   consumeTrapVisual(pos: Pos) {
-    const key = keyOf(pos)
-    const visual = this.trapVisuals.get(key)
-    if (!visual) return
-    this.scene.tweens.killTweensOf(visual)
-    this.scene.tweens.killTweensOf(visual.list)
-    visual.destroy()
-    this.trapVisuals.delete(key)
+    // Traps are intentionally invisible until triggered.
+    void pos
   }
 
   consumeChestVisual(pos: Pos) {
@@ -450,35 +434,6 @@ export class DungeonVisualSystem {
       ease: 'Sine.InOut',
     })
 
-    return container
-  }
-
-  private createTrapVisual(trap: TrapTile) {
-    const x = trap.pos.x * TILE + TILE / 2
-    const y = trap.pos.y * TILE + TILE / 2
-    const base = this.scene.add.ellipse(0, 0, 24, 8, 0x09090b, 0.65)
-    let marker: Phaser.GameObjects.GameObject
-
-    if (trap.kind === 'spike') {
-      marker = this.scene.add.triangle(0, -2, 0, 10, 6, -8, 12, 10, 0x94a3b8, 0.95)
-    } else if (trap.kind === 'flame') {
-      marker = this.scene.add.triangle(0, -2, 0, 10, 6, -10, 12, 10, 0xfb7185, 0.95)
-    } else {
-      marker = this.scene.add.ellipse(0, -2, 13, 9, 0x84cc16, 0.9)
-    }
-
-    const container = this.scene.add.container(x, y, [base, marker])
-    container.setDepth(2)
-    container.setSize(24, 20)
-    container.setPosition(x, y)
-    this.scene.tweens.add({
-      targets: marker,
-      alpha: { from: 0.55, to: 1 },
-      duration: 700,
-      yoyo: true,
-      repeat: -1,
-      ease: 'Sine.InOut',
-    })
     return container
   }
 
