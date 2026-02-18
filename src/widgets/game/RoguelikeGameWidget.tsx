@@ -7,29 +7,35 @@ import { LevelUpChoiceModal } from '../../features/game/components/LevelUpChoice
 import { NewRunConfirmModal } from '../../features/game/components/NewRunConfirmModal'
 import RoguelikeCanvas from '../../features/game/components/RoguelikeCanvas'
 import { RoguelikeStatusPanel } from '../../features/game/components/RoguelikeStatusPanel'
-import { useRoguelikeUi } from '../../features/game/hooks/useRoguelikeUi'
+import { useGameUiStore } from '../../features/game/store/gameUiStore'
 
 export function RoguelikeGameWidget() {
   const [isHelpOpen, setIsHelpOpen] = useState(false)
   const [isNewRunConfirmOpen, setIsNewRunConfirmOpen] = useState(false)
   const [isDeathRestartOpen, setIsDeathRestartOpen] = useState(false)
-  const {
-    hud,
-    logs,
-    status,
-    levelUpChoices,
-    setHud,
-    pushLog,
-    newRun,
-    setUiInputBlocked,
-    setLevelUpChoices,
-    pickLevelUpChoice,
-    audioMuted,
-    audioVolume,
-    toggleAudioMuted,
-    setAudioVolumePercent,
-    setApi,
-  } = useRoguelikeUi()
+
+  const hud = useGameUiStore((state) => state.hud)
+  const logs = useGameUiStore((state) => state.logs)
+  const levelUpChoices = useGameUiStore((state) => state.levelUpChoices)
+  const audioMuted = useGameUiStore((state) => state.audioMuted)
+  const audioVolume = useGameUiStore((state) => state.audioVolume)
+  const setHud = useGameUiStore((state) => state.setHud)
+  const pushLog = useGameUiStore((state) => state.pushLog)
+  const newRun = useGameUiStore((state) => state.newRun)
+  const setUiInputBlocked = useGameUiStore((state) => state.setUiInputBlocked)
+  const setLevelUpChoices = useGameUiStore((state) => state.setLevelUpChoices)
+  const pickLevelUpChoice = useGameUiStore((state) => state.pickLevelUpChoice)
+  const toggleAudioMuted = useGameUiStore((state) => state.toggleAudioMuted)
+  const setAudioVolumePercent = useGameUiStore((state) => state.setAudioVolumePercent)
+  const setApi = useGameUiStore((state) => state.setApi)
+
+  const status = useMemo(() => {
+    if (hud.gameOver) {
+      return `Run Over on Floor ${hud.floor}`
+    }
+    return `Floor ${hud.floor} · ${hud.enemiesLeft} enemies`
+  }, [hud.floor, hud.enemiesLeft, hud.gameOver])
+
   const prevGameOverRef = useRef(hud.gameOver)
 
   useEffect(() => {
