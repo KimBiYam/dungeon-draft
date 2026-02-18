@@ -1,10 +1,12 @@
+import { memo } from 'react'
+
 type DeathRestartModalProps = {
   open: boolean
   onClose: () => void
   onRestart: () => void
 }
 
-export function DeathRestartModal({
+function DeathRestartModalImpl({
   open,
   onClose,
   onRestart,
@@ -44,3 +46,5 @@ export function DeathRestartModal({
     </div>
   )
 }
+
+export const DeathRestartModal = memo(DeathRestartModalImpl)

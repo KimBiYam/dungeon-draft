@@ -1,9 +1,11 @@
+import { memo } from 'react'
+
 type HelpModalProps = {
   open: boolean
   onClose: () => void
 }
 
-export function HelpModal({ open, onClose }: HelpModalProps) {
+function HelpModalImpl({ open, onClose }: HelpModalProps) {
   if (!open) {
     return null
   }
@@ -34,3 +36,5 @@ export function HelpModal({ open, onClose }: HelpModalProps) {
     </div>
   )
 }
+
+export const HelpModal = memo(HelpModalImpl)

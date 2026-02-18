@@ -1,3 +1,5 @@
+import { memo } from 'react'
+
 import type { LevelUpChoice } from '../engine/createRoguelikeGame'
 
 type LevelUpChoiceModalProps = {
@@ -5,7 +7,7 @@ type LevelUpChoiceModalProps = {
   onPick: (choiceId: string) => void
 }
 
-export function LevelUpChoiceModal({ choices, onPick }: LevelUpChoiceModalProps) {
+function LevelUpChoiceModalImpl({ choices, onPick }: LevelUpChoiceModalProps) {
   if (!choices || choices.length === 0) {
     return null
   }
@@ -33,3 +35,9 @@ export function LevelUpChoiceModal({ choices, onPick }: LevelUpChoiceModalProps)
     </div>
   )
 }
+
+const areEqual = (prev: LevelUpChoiceModalProps, next: LevelUpChoiceModalProps) => {
+  return prev.choices === next.choices && prev.onPick === next.onPick
+}
+
+export const LevelUpChoiceModal = memo(LevelUpChoiceModalImpl, areEqual)

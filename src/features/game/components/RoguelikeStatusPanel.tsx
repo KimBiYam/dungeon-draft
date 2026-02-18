@@ -1,3 +1,5 @@
+import { memo } from 'react'
+
 import type { HudState } from '../engine/createRoguelikeGame'
 import { AudioControls } from './AudioControls'
 import { StatCard } from './StatCard'
@@ -12,7 +14,7 @@ type RoguelikeStatusPanelProps = {
   onOpenHelp: () => void
 }
 
-export function RoguelikeStatusPanel({
+function RoguelikeStatusPanelImpl({
   hud,
   status,
   audioMuted,
@@ -51,3 +53,20 @@ export function RoguelikeStatusPanel({
     </section>
   )
 }
+
+const areEqual = (
+  prev: RoguelikeStatusPanelProps,
+  next: RoguelikeStatusPanelProps,
+) => {
+  return (
+    prev.hud === next.hud &&
+    prev.status === next.status &&
+    prev.audioMuted === next.audioMuted &&
+    prev.audioVolume === next.audioVolume &&
+    prev.onToggleAudioMuted === next.onToggleAudioMuted &&
+    prev.onAudioVolumeChange === next.onAudioVolumeChange &&
+    prev.onOpenHelp === next.onOpenHelp
+  )
+}
+
+export const RoguelikeStatusPanel = memo(RoguelikeStatusPanelImpl, areEqual)
