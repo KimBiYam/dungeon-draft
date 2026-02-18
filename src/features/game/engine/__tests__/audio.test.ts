@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { createSfxPattern } from '../audio'
+import { clampVolume, createSfxPattern } from '../audio'
 
 describe('createSfxPattern', () => {
   it('returns meaningful steps for combat and progression events', () => {
@@ -24,5 +24,13 @@ describe('createSfxPattern', () => {
         expect(step.duration).toBeGreaterThan(0)
       }
     }
+  })
+})
+
+describe('clampVolume', () => {
+  it('clamps into 0..1', () => {
+    expect(clampVolume(-1)).toBe(0)
+    expect(clampVolume(0.5)).toBe(0.5)
+    expect(clampVolume(5)).toBe(1)
   })
 })

@@ -3,6 +3,7 @@ import { useCallback, useMemo, useRef, useState } from 'react'
 import type { HudState, RoguelikeGameApi } from '../engine/createRoguelikeGame'
 import { GOLD_HEAL_COST } from '../engine/contracts'
 import { getArmorUpgradeCost, getWeaponUpgradeCost } from '../engine/economy'
+import { clampVolume } from '../engine/audio'
 
 const initialHud: HudState = {
   floor: 1,
@@ -23,8 +24,12 @@ const initialHud: HudState = {
 export function useRoguelikeUi() {
   const [hud, setHud] = useState<HudState>(initialHud)
   const [logs, setLogs] = useState<string[]>([])
+  const [audioMuted, setAudioMutedState] = useState(false)
+  const [audioVolume, setAudioVolumeState] = useState(80)
   const apiRef = useRef<RoguelikeGameApi | null>(null)
   const uiInputBlockedRef = useRef(false)
+  const audioMutedRef = useRef(false)
+  const audioVolumeRef = useRef(0.8)
 
   const status = useMemo(() => {
     if (hud.gameOver) {
@@ -45,11 +50,30 @@ export function useRoguelikeUi() {
   const setApi = useCallback((api: RoguelikeGameApi | null) => {
     apiRef.current = api
     apiRef.current?.setUiInputBlocked(uiInputBlockedRef.current)
+    apiRef.current?.setAudioMuted(audioMutedRef.current)
+    apiRef.current?.setAudioVolume(audioVolumeRef.current)
   }, [])
 
   const setUiInputBlocked = useCallback((blocked: boolean) => {
     uiInputBlockedRef.current = blocked
     apiRef.current?.setUiInputBlocked(blocked)
+  }, [])
+
+  const toggleAudioMuted = useCallback(() => {
+    setAudioMutedState((prev) => {
+      const next = !prev
+      audioMutedRef.current = next
+      apiRef.current?.setAudioMuted(next)
+      return next
+    })
+  }, [])
+
+  const setAudioVolumePercent = useCallback((percent: number) => {
+    const clampedPercent = Math.min(100, Math.max(0, Math.round(percent)))
+    const normalized = clampVolume(clampedPercent / 100)
+    audioVolumeRef.current = normalized
+    setAudioVolumeState(clampedPercent)
+    apiRef.current?.setAudioVolume(normalized)
   }, [])
 
   const spendGoldForHeal = useCallback(() => {
@@ -75,6 +99,10 @@ export function useRoguelikeUi() {
     pushLog,
     newRun,
     setUiInputBlocked,
+    audioMuted,
+    audioVolume,
+    toggleAudioMuted,
+    setAudioVolumePercent,
     spendGoldForHeal,
     spendGoldForWeaponUpgrade,
     spendGoldForArmorUpgrade,

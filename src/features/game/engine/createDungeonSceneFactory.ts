@@ -73,6 +73,14 @@ export function createDungeonSceneFactory(
       this.uiInputBlocked = blocked
     }
 
+    setAudioMuted(muted: boolean) {
+      this.audio.setMuted(muted)
+    }
+
+    setAudioVolume(volume: number) {
+      this.audio.setMasterVolume(volume)
+    }
+
     spendGoldForHeal() {
       if (this.run.gameOver) {
         this.pushLog('Cannot heal after death. Start a new run.')

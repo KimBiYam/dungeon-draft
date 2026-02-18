@@ -21,6 +21,12 @@ export type SfxStep = {
 }
 
 const BASE_VOLUME = 0.05
+const MIN_VOLUME = 0
+const MAX_VOLUME = 1
+
+export function clampVolume(volume: number) {
+  return Math.min(MAX_VOLUME, Math.max(MIN_VOLUME, volume))
+}
 
 export function createSfxPattern(event: SfxEvent): SfxStep[] {
   switch (event) {
@@ -103,9 +109,24 @@ type AudioContextLike = {
 }
 
 export class RetroSfx {
+  private muted = false
+  private masterVolume = 0.8
+
   constructor(private readonly getContext: () => AudioContextLike | undefined) {}
 
+  setMuted(muted: boolean) {
+    this.muted = muted
+  }
+
+  setMasterVolume(volume: number) {
+    this.masterVolume = clampVolume(volume)
+  }
+
   play(event: SfxEvent) {
+    if (this.muted || this.masterVolume <= 0) {
+      return
+    }
+
     const context = this.getContext()
     if (!context) {
       return
@@ -132,7 +153,7 @@ export class RetroSfx {
     oscillator.type = step.wave
     oscillator.frequency.setValueAtTime(step.frequency, startTime)
 
-    const peak = Math.max(0.0001, step.volume * BASE_VOLUME)
+    const peak = Math.max(0.0001, step.volume * BASE_VOLUME * this.masterVolume)
     gain.gain.setValueAtTime(0.0001, startTime)
     gain.gain.exponentialRampToValueAtTime(peak, startTime + 0.01)
     gain.gain.exponentialRampToValueAtTime(0.0001, endTime)

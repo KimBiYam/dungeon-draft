@@ -31,6 +31,8 @@ export async function createRoguelikeGame(
   return {
     newRun: () => scene.newRun(),
     setUiInputBlocked: (blocked: boolean) => scene.setUiInputBlocked(blocked),
+    setAudioMuted: (muted: boolean) => scene.setAudioMuted(muted),
+    setAudioVolume: (volume: number) => scene.setAudioVolume(volume),
     spendGoldForHeal: () => scene.spendGoldForHeal(),
     spendGoldForWeaponUpgrade: () => scene.spendGoldForWeaponUpgrade(),
     spendGoldForArmorUpgrade: () => scene.spendGoldForArmorUpgrade(),

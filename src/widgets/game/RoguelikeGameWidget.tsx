@@ -18,6 +18,10 @@ export function RoguelikeGameWidget() {
     pushLog,
     newRun,
     setUiInputBlocked,
+    audioMuted,
+    audioVolume,
+    toggleAudioMuted,
+    setAudioVolumePercent,
     spendGoldForHeal,
     spendGoldForWeaponUpgrade,
     spendGoldForArmorUpgrade,
@@ -50,7 +54,15 @@ export function RoguelikeGameWidget() {
 
   return (
     <>
-      <RoguelikeStatusPanel hud={hud} status={status} onOpenHelp={openHelp} />
+      <RoguelikeStatusPanel
+        hud={hud}
+        status={status}
+        audioMuted={audioMuted}
+        audioVolume={audioVolume}
+        onToggleAudioMuted={toggleAudioMuted}
+        onAudioVolumeChange={setAudioVolumePercent}
+        onOpenHelp={openHelp}
+      />
 
       <section className="grid gap-5 lg:grid-cols-3">
         <div className="lg:col-span-2">
