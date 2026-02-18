@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 
 import type { HudState, RoguelikeGameApi } from '../engine/createRoguelikeGame'
 import { GOLD_HEAL_COST } from '../engine/contracts'
@@ -32,30 +32,30 @@ export function useRoguelikeUi() {
     return `Floor ${hud.floor} · ${hud.enemiesLeft} enemies`
   }, [hud.floor, hud.enemiesLeft, hud.gameOver])
 
-  const pushLog = (line: string) => {
+  const pushLog = useCallback((line: string) => {
     setLogs((prev) => [line, ...prev].slice(0, 14))
-  }
+  }, [])
 
-  const newRun = () => {
+  const newRun = useCallback(() => {
     apiRef.current?.newRun()
     setLogs([])
-  }
+  }, [])
 
-  const setApi = (api: RoguelikeGameApi | null) => {
+  const setApi = useCallback((api: RoguelikeGameApi | null) => {
     apiRef.current = api
-  }
+  }, [])
 
-  const spendGoldForHeal = () => {
+  const spendGoldForHeal = useCallback(() => {
     apiRef.current?.spendGoldForHeal()
-  }
+  }, [])
 
-  const spendGoldForWeaponUpgrade = () => {
+  const spendGoldForWeaponUpgrade = useCallback(() => {
     apiRef.current?.spendGoldForWeaponUpgrade()
-  }
+  }, [])
 
-  const spendGoldForArmorUpgrade = () => {
+  const spendGoldForArmorUpgrade = useCallback(() => {
     apiRef.current?.spendGoldForArmorUpgrade()
-  }
+  }, [])
 
   const weaponUpgradeCost = getWeaponUpgradeCost(hud.weaponLevel)
   const armorUpgradeCost = getArmorUpgradeCost(hud.armorLevel)

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 
 import {
   createRoguelikeGame,
@@ -12,7 +12,7 @@ type RoguelikeCanvasProps = {
   onReady: (api: RoguelikeGameApi | null) => void;
 };
 
-export default function RoguelikeCanvas({
+function RoguelikeCanvas({
   onState,
   onLog,
   onReady,
@@ -70,3 +70,5 @@ export default function RoguelikeCanvas({
     </div>
   );
 }
+
+export default memo(RoguelikeCanvas);
