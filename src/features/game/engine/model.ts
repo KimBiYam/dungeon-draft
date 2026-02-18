@@ -17,7 +17,6 @@ export type FloorData = {
   walls: Set<string>
   enemies: Enemy[]
   potions: Pos[]
-  goldPiles: Pos[]
   exit: Pos
 }
 export type RunState = {
@@ -28,11 +27,8 @@ export type RunState = {
   atk: number
   def: number
   level: number
-  weaponLevel: number
-  armorLevel: number
   xp: number
   nextXp: number
-  gold: number
   player: Pos
   floorData: FloorData
   gameOver: boolean
@@ -45,11 +41,8 @@ export type HudState = {
   atk: number
   def: number
   level: number
-  weaponLevel: number
-  armorLevel: number
   xp: number
   nextXp: number
-  gold: number
   enemiesLeft: number
   gameOver: boolean
 }
@@ -130,10 +123,9 @@ export function createFloor(floor: number): FloorData {
   })
 
   const potions: Pos[] = Array.from({ length: 2 + Math.floor(floor / 2) }, findFree)
-  const goldPiles: Pos[] = Array.from({ length: 3 + floor }, findFree)
   const exit = findFree()
 
-  return { width, height, walls, enemies, potions, goldPiles, exit }
+  return { width, height, walls, enemies, potions, exit }
 }
 
 export function createInitialRun(): RunState {
@@ -145,11 +137,8 @@ export function createInitialRun(): RunState {
     atk: 7,
     def: 1,
     level: 1,
-    weaponLevel: 1,
-    armorLevel: 1,
     xp: 0,
     nextXp: 16,
-    gold: 0,
     player: { ...START_POS },
     floorData: createFloor(1),
     gameOver: false,
@@ -164,11 +153,8 @@ export function toHud(run: RunState): HudState {
     atk: run.atk,
     def: run.def,
     level: run.level,
-    weaponLevel: run.weaponLevel,
-    armorLevel: run.armorLevel,
     xp: run.xp,
     nextXp: run.nextXp,
-    gold: run.gold,
     enemiesLeft: run.floorData.enemies.length,
     gameOver: run.gameOver,
   }

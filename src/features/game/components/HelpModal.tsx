@@ -21,8 +21,7 @@ export function HelpModal({ open, onClose }: HelpModalProps) {
         <ul className="mt-3 space-y-2 text-sm text-zinc-200">
           <li>`WASD` / Arrow Keys: Move</li>
           <li>`Space`: Wait a turn</li>
-          <li>`Q`: Upgrade Weapon</li>
-          <li>`E`: Upgrade Armor</li>
+          <li>Level up: pick one reward card with mouse click</li>
         </ul>
         <button
           type="button"

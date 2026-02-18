@@ -16,7 +16,7 @@ describe('createSfxPattern', () => {
   })
 
   it('uses only positive durations and frequencies', () => {
-    const events = ['runStart', 'pickupGold', 'wallBlocked'] as const
+    const events = ['runStart', 'pickupPotion', 'wallBlocked'] as const
 
     for (const event of events) {
       for (const step of createSfxPattern(event)) {

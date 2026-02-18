@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { CombatLogPanel } from '../../features/game/components/CombatLogPanel'
 import { HelpModal } from '../../features/game/components/HelpModal'
+import { LevelUpChoiceModal } from '../../features/game/components/LevelUpChoiceModal'
 import { NewRunConfirmModal } from '../../features/game/components/NewRunConfirmModal'
 import RoguelikeCanvas from '../../features/game/components/RoguelikeCanvas'
 import { RoguelikeStatusPanel } from '../../features/game/components/RoguelikeStatusPanel'
@@ -14,29 +15,23 @@ export function RoguelikeGameWidget() {
     hud,
     logs,
     status,
+    levelUpChoices,
     setHud,
     pushLog,
     newRun,
     setUiInputBlocked,
+    setLevelUpChoices,
+    pickLevelUpChoice,
     audioMuted,
     audioVolume,
     toggleAudioMuted,
     setAudioVolumePercent,
-    spendGoldForHeal,
-    spendGoldForWeaponUpgrade,
-    spendGoldForArmorUpgrade,
-    canSpendGoldForHeal,
-    canUpgradeWeapon,
-    canUpgradeArmor,
-    goldHealCost,
-    weaponUpgradeCost,
-    armorUpgradeCost,
     setApi,
   } = useRoguelikeUi()
 
   const isAnyModalOpen = useMemo(
-    () => isHelpOpen || isNewRunConfirmOpen,
-    [isHelpOpen, isNewRunConfirmOpen],
+    () => isHelpOpen || isNewRunConfirmOpen || Boolean(levelUpChoices?.length),
+    [isHelpOpen, isNewRunConfirmOpen, levelUpChoices],
   )
 
   useEffect(() => {
@@ -66,25 +61,19 @@ export function RoguelikeGameWidget() {
 
       <section className="grid gap-5 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <RoguelikeCanvas onState={setHud} onLog={pushLog} onReady={setApi} />
+          <RoguelikeCanvas
+            onState={setHud}
+            onLog={pushLog}
+            onLevelUpChoices={setLevelUpChoices}
+            onReady={setApi}
+          />
         </div>
 
-        <CombatLogPanel
-          logs={logs}
-          canSpendGoldForHeal={canSpendGoldForHeal}
-          goldHealCost={goldHealCost}
-          onSpendGoldForHeal={spendGoldForHeal}
-          canUpgradeWeapon={canUpgradeWeapon}
-          canUpgradeArmor={canUpgradeArmor}
-          weaponUpgradeCost={weaponUpgradeCost}
-          armorUpgradeCost={armorUpgradeCost}
-          onUpgradeWeapon={spendGoldForWeaponUpgrade}
-          onUpgradeArmor={spendGoldForArmorUpgrade}
-          onRequestNewRun={requestNewRun}
-        />
+        <CombatLogPanel logs={logs} onRequestNewRun={requestNewRun} />
       </section>
 
       <HelpModal open={isHelpOpen} onClose={closeHelp} />
+      <LevelUpChoiceModal choices={levelUpChoices} onPick={pickLevelUpChoice} />
       <NewRunConfirmModal
         open={isNewRunConfirmOpen}
         onCancel={cancelNewRun}

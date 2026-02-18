@@ -35,17 +35,14 @@ describe('resolveMoveFromKey', () => {
     expect(inputMapper.resolveMoveFromKey('q')).toBeNull()
   })
 
-  it('resolves upgrade commands from physical key codes', () => {
-    expect(inputMapper.resolveCommand('q', 'KeyQ')).toEqual({ type: 'upgradeWeapon' })
-    expect(inputMapper.resolveCommand('ㅂ', 'KeyQ')).toEqual({ type: 'upgradeWeapon' })
-    expect(inputMapper.resolveCommand('e', 'KeyE')).toEqual({ type: 'upgradeArmor' })
-    expect(inputMapper.resolveCommand('ㄷ', 'KeyE')).toEqual({ type: 'upgradeArmor' })
-  })
-
-  it('resolves move command when upgrade code is not used', () => {
-    expect(inputMapper.resolveCommand('w', 'KeyW')).toEqual({
+  it('resolves move command from key', () => {
+    expect(inputMapper.resolveCommand('w')).toEqual({
       type: 'move',
       move: { x: 0, y: -1 },
     })
+  })
+
+  it('returns null command for unsupported key', () => {
+    expect(inputMapper.resolveCommand('q')).toBeNull()
   })
 })

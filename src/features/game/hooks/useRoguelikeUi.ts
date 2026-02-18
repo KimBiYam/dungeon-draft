@@ -1,9 +1,11 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 
-import type { HudState, RoguelikeGameApi } from '../engine/createRoguelikeGame'
-import { GOLD_HEAL_COST } from '../engine/contracts'
-import { getArmorUpgradeCost, getWeaponUpgradeCost } from '../engine/economy'
 import { clampVolume } from '../engine/audio'
+import type {
+  HudState,
+  LevelUpChoice,
+  RoguelikeGameApi,
+} from '../engine/createRoguelikeGame'
 
 const initialHud: HudState = {
   floor: 1,
@@ -12,11 +14,8 @@ const initialHud: HudState = {
   atk: 7,
   def: 1,
   level: 1,
-  weaponLevel: 1,
-  armorLevel: 1,
   xp: 0,
   nextXp: 16,
-  gold: 0,
   enemiesLeft: 0,
   gameOver: false,
 }
@@ -24,6 +23,7 @@ const initialHud: HudState = {
 export function useRoguelikeUi() {
   const [hud, setHud] = useState<HudState>(initialHud)
   const [logs, setLogs] = useState<string[]>([])
+  const [levelUpChoices, setLevelUpChoicesState] = useState<LevelUpChoice[] | null>(null)
   const [audioMuted, setAudioMutedState] = useState(false)
   const [audioVolume, setAudioVolumeState] = useState(80)
   const apiRef = useRef<RoguelikeGameApi | null>(null)
@@ -45,6 +45,7 @@ export function useRoguelikeUi() {
   const newRun = useCallback(() => {
     apiRef.current?.newRun()
     setLogs([])
+    setLevelUpChoicesState(null)
   }, [])
 
   const setApi = useCallback((api: RoguelikeGameApi | null) => {
@@ -57,6 +58,14 @@ export function useRoguelikeUi() {
   const setUiInputBlocked = useCallback((blocked: boolean) => {
     uiInputBlockedRef.current = blocked
     apiRef.current?.setUiInputBlocked(blocked)
+  }, [])
+
+  const setLevelUpChoices = useCallback((choices: LevelUpChoice[] | null) => {
+    setLevelUpChoicesState(choices)
+  }, [])
+
+  const pickLevelUpChoice = useCallback((choiceId: string) => {
+    apiRef.current?.chooseLevelUpReward(choiceId)
   }, [])
 
   const toggleAudioMuted = useCallback(() => {
@@ -76,42 +85,21 @@ export function useRoguelikeUi() {
     apiRef.current?.setAudioVolume(normalized)
   }, [])
 
-  const spendGoldForHeal = useCallback(() => {
-    apiRef.current?.spendGoldForHeal()
-  }, [])
-
-  const spendGoldForWeaponUpgrade = useCallback(() => {
-    apiRef.current?.spendGoldForWeaponUpgrade()
-  }, [])
-
-  const spendGoldForArmorUpgrade = useCallback(() => {
-    apiRef.current?.spendGoldForArmorUpgrade()
-  }, [])
-
-  const weaponUpgradeCost = getWeaponUpgradeCost(hud.weaponLevel)
-  const armorUpgradeCost = getArmorUpgradeCost(hud.armorLevel)
-
   return {
     hud,
     logs,
     status,
+    levelUpChoices,
     setHud,
     pushLog,
     newRun,
     setUiInputBlocked,
+    setLevelUpChoices,
+    pickLevelUpChoice,
     audioMuted,
     audioVolume,
     toggleAudioMuted,
     setAudioVolumePercent,
-    spendGoldForHeal,
-    spendGoldForWeaponUpgrade,
-    spendGoldForArmorUpgrade,
-    canSpendGoldForHeal: hud.gold >= GOLD_HEAL_COST && hud.hp < hud.maxHp && !hud.gameOver,
-    goldHealCost: GOLD_HEAL_COST,
-    canUpgradeWeapon: hud.gold >= weaponUpgradeCost && !hud.gameOver,
-    canUpgradeArmor: hud.gold >= armorUpgradeCost && !hud.gameOver,
-    weaponUpgradeCost,
-    armorUpgradeCost,
     setApi,
   }
 }

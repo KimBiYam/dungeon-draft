@@ -35,11 +35,9 @@ export class DungeonVisualSystem {
   private wallGroup?: Phaser.GameObjects.Group
   private enemyGroup?: Phaser.GameObjects.Group
   private potionGroup?: Phaser.GameObjects.Group
-  private goldGroup?: Phaser.GameObjects.Group
   private exitOrb?: Phaser.GameObjects.Arc
   private enemyVisuals = new Map<string, EnemyVisual>()
   private potionVisuals = new Map<string, Phaser.GameObjects.Arc>()
-  private goldVisuals = new Map<string, Phaser.GameObjects.Arc>()
   private fogTiles = new Map<string, Phaser.GameObjects.Rectangle>()
 
   constructor(private readonly scene: Phaser.Scene) {}
@@ -82,7 +80,6 @@ export class DungeonVisualSystem {
     this.wallGroup?.clear(true, true)
     this.enemyGroup?.clear(true, true)
     this.potionGroup?.clear(true, true)
-    this.goldGroup?.clear(true, true)
     if (this.exitOrb) {
       this.scene.tweens.killTweensOf(this.exitOrb)
       this.exitOrb.destroy()
@@ -90,14 +87,12 @@ export class DungeonVisualSystem {
     }
     this.enemyVisuals.clear()
     this.potionVisuals.clear()
-    this.goldVisuals.clear()
     this.fogTiles.forEach((tile) => tile.destroy())
     this.fogTiles.clear()
 
     this.wallGroup = this.scene.add.group()
     this.enemyGroup = this.scene.add.group()
     this.potionGroup = this.scene.add.group()
-    this.goldGroup = this.scene.add.group()
 
     for (let y = 0; y < run.floorData.height; y++) {
       for (let x = 0; x < run.floorData.width; x++) {
@@ -125,18 +120,6 @@ export class DungeonVisualSystem {
       )
       this.potionGroup.add(potion)
       this.potionVisuals.set(keyOf(pos), potion)
-    }
-
-    for (const pos of run.floorData.goldPiles) {
-      const coin = this.scene.add.circle(
-        pos.x * TILE + TILE / 2,
-        pos.y * TILE + TILE / 2,
-        9,
-        0xf59e0b,
-        0.95,
-      )
-      this.goldGroup.add(coin)
-      this.goldVisuals.set(keyOf(pos), coin)
     }
 
     const exitOrb = this.scene.add.circle(
@@ -220,15 +203,6 @@ export class DungeonVisualSystem {
     this.scene.tweens.killTweensOf(visual)
     visual.destroy()
     this.potionVisuals.delete(key)
-  }
-
-  consumeGoldVisual(pos: Pos) {
-    const key = keyOf(pos)
-    const visual = this.goldVisuals.get(key)
-    if (!visual) return
-    this.scene.tweens.killTweensOf(visual)
-    visual.destroy()
-    this.goldVisuals.delete(key)
   }
 
   tweenPlayerTo(pos: Pos, onUpdate: () => void) {

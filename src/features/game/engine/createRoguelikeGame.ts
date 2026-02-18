@@ -5,6 +5,7 @@ import {
 } from './contracts'
 import { createDungeonSceneFactory } from './createDungeonSceneFactory'
 
+export type { LevelUpChoice } from './hero'
 export type { HudState } from './model'
 export type { RoguelikeGameApi } from './contracts'
 
@@ -30,12 +31,10 @@ export async function createRoguelikeGame(
 
   return {
     newRun: () => scene.newRun(),
+    chooseLevelUpReward: (choiceId: string) => scene.chooseLevelUpReward(choiceId),
     setUiInputBlocked: (blocked: boolean) => scene.setUiInputBlocked(blocked),
     setAudioMuted: (muted: boolean) => scene.setAudioMuted(muted),
     setAudioVolume: (volume: number) => scene.setAudioVolume(volume),
-    spendGoldForHeal: () => scene.spendGoldForHeal(),
-    spendGoldForWeaponUpgrade: () => scene.spendGoldForWeaponUpgrade(),
-    spendGoldForArmorUpgrade: () => scene.spendGoldForArmorUpgrade(),
     destroy: () => game.destroy(true),
   }
 }

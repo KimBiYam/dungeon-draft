@@ -1,6 +1,8 @@
 import type { CreateRoguelikeGameOptions } from './contracts'
-import { GOLD_HEAL_AMOUNT, GOLD_HEAL_COST } from './contracts'
-import { getArmorUpgradeCost, getWeaponUpgradeCost } from './economy'
+import { RetroSfx } from './audio'
+import { DungeonVisualSystem } from './dungeonVisualSystem'
+import { HeroRoleService, type LevelUpChoice } from './hero'
+import { InputMapper } from './input'
 import {
   START_POS,
   TILE,
@@ -14,11 +16,7 @@ import {
   type Pos,
   type RunState,
 } from './model'
-import { HeroRoleService } from './hero'
-import { InputMapper } from './input'
 import { MonsterRoleService } from './monster'
-import { DungeonVisualSystem } from './dungeonVisualSystem'
-import { RetroSfx } from './audio'
 import {
   HERO_ATTACK_ANIM,
   HERO_HURT_ANIM,
@@ -37,6 +35,8 @@ export function createDungeonSceneFactory(
   return class DungeonScene extends Phaser.Scene {
     private run: RunState = createInitialRun()
     private uiInputBlocked = false
+    private pendingLevelUps = 0
+    private activeLevelUpChoices: LevelUpChoice[] | null = null
     private readonly inputMapper = new InputMapper()
     private readonly heroRole = new HeroRoleService(randomInt)
     private readonly monsterRole = new MonsterRoleService(randomInt)
@@ -56,6 +56,7 @@ export function createDungeonSceneFactory(
       this.visuals.createUiOverlay()
       this.bindInput()
       this.visuals.rebuildFloorObjects(this.run)
+      callbacks.onLevelUpChoices(null)
       callbacks.onLog('Run started. Reach the portal to descend.')
       this.audio.play('runStart')
       this.pushState()
@@ -63,9 +64,36 @@ export function createDungeonSceneFactory(
 
     newRun() {
       this.run = createInitialRun()
+      this.pendingLevelUps = 0
+      this.activeLevelUpChoices = null
+      callbacks.onLevelUpChoices(null)
       this.visuals.rebuildFloorObjects(this.run)
       callbacks.onLog('New run started.')
       this.audio.play('newRun')
+      this.pushState()
+    }
+
+    chooseLevelUpReward(choiceId: string) {
+      if (!this.activeLevelUpChoices || this.run.gameOver) {
+        return
+      }
+
+      const log = this.heroRole.applyLevelUpChoice(this.run, choiceId)
+      if (!log) {
+        return
+      }
+
+      this.pushLog(log)
+      this.pendingLevelUps = Math.max(0, this.pendingLevelUps - 1)
+      this.audio.play('levelUp')
+
+      if (this.pendingLevelUps > 0) {
+        this.offerLevelUpChoices()
+      } else {
+        this.activeLevelUpChoices = null
+        callbacks.onLevelUpChoices(null)
+      }
+
       this.pushState()
     }
 
@@ -81,90 +109,39 @@ export function createDungeonSceneFactory(
       this.audio.setMasterVolume(volume)
     }
 
-    spendGoldForHeal() {
-      if (this.run.gameOver) {
-        this.pushLog('Cannot heal after death. Start a new run.')
-        return
-      }
-      if (this.run.gold < GOLD_HEAL_COST) {
-        this.pushLog(`Need ${GOLD_HEAL_COST} gold to mend.`)
-        return
-      }
-      if (this.run.hp >= this.run.maxHp) {
-        this.pushLog('HP is already full.')
-        return
-      }
-
-      this.run.gold -= GOLD_HEAL_COST
-      const healed = Math.min(GOLD_HEAL_AMOUNT, this.run.maxHp - this.run.hp)
-      this.run.hp += healed
-      this.pushLog(`Mended wounds for ${healed} HP (-${GOLD_HEAL_COST} gold).`)
-      this.audio.play('pickupPotion')
-      this.pushState()
-    }
-
-    spendGoldForWeaponUpgrade() {
-      if (this.run.gameOver) {
-        this.pushLog('Cannot forge weapons after death. Start a new run.')
-        return
-      }
-      const cost = getWeaponUpgradeCost(this.run.weaponLevel)
-      if (this.run.gold < cost) {
-        this.pushLog(`Need ${cost} gold to upgrade weapon.`)
-        return
-      }
-
-      this.run.gold -= cost
-      this.run.weaponLevel += 1
-      this.run.atk += 1
-      this.pushLog(`Weapon upgraded to +${this.run.weaponLevel - 1} ATK (-${cost} gold).`)
-      this.audio.play('upgrade')
-      this.pushState()
-    }
-
-    spendGoldForArmorUpgrade() {
-      if (this.run.gameOver) {
-        this.pushLog('Cannot reinforce armor after death. Start a new run.')
-        return
-      }
-      const cost = getArmorUpgradeCost(this.run.armorLevel)
-      if (this.run.gold < cost) {
-        this.pushLog(`Need ${cost} gold to upgrade armor.`)
-        return
-      }
-
-      this.run.gold -= cost
-      this.run.armorLevel += 1
-      this.run.def += 1
-      this.pushLog(`Armor upgraded to +${this.run.armorLevel - 1} DEF (-${cost} gold).`)
-      this.audio.play('upgrade')
-      this.pushState()
-    }
-
     private bindInput() {
       this.input.keyboard?.on('keydown', (event: KeyboardEvent) => {
         if (event.repeat) return
 
-        const command = this.inputMapper.resolveCommand(event.key, event.code)
+        const command = this.inputMapper.resolveCommand(event.key)
         if (!command) return
 
         event.preventDefault()
-        if (this.uiInputBlocked) return
-
-        if (command.type === 'upgradeWeapon') {
-          this.spendGoldForWeaponUpgrade()
-          return
-        }
-        if (command.type === 'upgradeArmor') {
-          this.spendGoldForArmorUpgrade()
-          return
-        }
+        if (this.uiInputBlocked || this.activeLevelUpChoices) return
         this.processTurn(command.move.x, command.move.y)
       })
     }
 
+    private offerLevelUpChoices() {
+      const choices = this.heroRole.createLevelUpChoices(3)
+      this.activeLevelUpChoices = choices
+      callbacks.onLevelUpChoices(choices)
+      this.pushLog('Level up! Choose one card.')
+    }
+
+    private processPendingLevelUps() {
+      const gained = this.heroRole.gainPendingLevelUps(this.run)
+      if (gained <= 0) {
+        return false
+      }
+
+      this.pendingLevelUps += gained
+      this.offerLevelUpChoices()
+      return true
+    }
+
     private processTurn(dx: number, dy: number) {
-      if (this.run.gameOver) return
+      if (this.run.gameOver || this.activeLevelUpChoices) return
 
       const target = { x: this.run.player.x + dx, y: this.run.player.y + dy }
       const moving = dx !== 0 || dy !== 0
@@ -203,10 +180,8 @@ export function createDungeonSceneFactory(
               (e) => e.id !== enemy.id,
             )
             const xp = randomInt(5, 8) + this.run.floor
-            const gold = randomInt(3, 9)
             this.run.xp += xp
-            this.run.gold += gold
-            this.pushLog(`${enemy.monsterName} down. +${xp} XP, +${gold} gold.`)
+            this.pushLog(`${enemy.monsterName} down. +${xp} XP.`)
             this.audio.play('enemyDefeat')
             this.cameraShake(120)
             this.visuals.destroyEnemyVisual(enemy.id)
@@ -225,16 +200,6 @@ export function createDungeonSceneFactory(
             this.pushLog(`Potion! +${heal} HP.`)
             this.audio.play('pickupPotion')
             this.visuals.consumePotionVisual(target)
-          }
-
-          const goldIdx = this.run.floorData.goldPiles.findIndex((g) => samePos(g, target))
-          if (goldIdx >= 0) {
-            this.run.floorData.goldPiles.splice(goldIdx, 1)
-            const loot = randomInt(6, 13)
-            this.run.gold += loot
-            this.pushLog(`Looted ${loot} gold.`)
-            this.audio.play('pickupGold')
-            this.visuals.consumeGoldVisual(target)
           }
 
           if (isExit) {
@@ -259,12 +224,10 @@ export function createDungeonSceneFactory(
         this.pushLog('You hold your stance.')
       }
 
-      let didLevelUp = false
-      for (const levelUpLog of this.heroRole.applyLevelUps(this.run)) {
-        didLevelUp = true
-        this.pushLog(levelUpLog)
+      if (this.processPendingLevelUps()) {
+        this.pushState()
+        return
       }
-      if (didLevelUp) this.audio.play('levelUp')
 
       this.enemyPhase()
       this.run.turn += 1
@@ -295,6 +258,9 @@ export function createDungeonSceneFactory(
             this.run.hp = 0
             this.run.gameOver = true
             this.pushLog(`You died on floor ${this.run.floor}. Press New Run.`)
+            callbacks.onLevelUpChoices(null)
+            this.activeLevelUpChoices = null
+            this.pendingLevelUps = 0
             this.audio.play('death')
             this.cameraShake(200)
             return

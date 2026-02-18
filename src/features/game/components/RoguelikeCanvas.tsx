@@ -1,58 +1,62 @@
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from 'react'
 
 import {
   createRoguelikeGame,
   type HudState,
+  type LevelUpChoice,
   type RoguelikeGameApi,
-} from "../engine/createRoguelikeGame";
+} from '../engine/createRoguelikeGame'
 
 type RoguelikeCanvasProps = {
-  onState: (state: HudState) => void;
-  onLog: (message: string) => void;
-  onReady: (api: RoguelikeGameApi | null) => void;
-};
+  onState: (state: HudState) => void
+  onLog: (message: string) => void
+  onLevelUpChoices: (choices: LevelUpChoice[] | null) => void
+  onReady: (api: RoguelikeGameApi | null) => void
+}
 
 function RoguelikeCanvas({
   onState,
   onLog,
+  onLevelUpChoices,
   onReady,
 }: RoguelikeCanvasProps) {
-  const mountRef = useRef<HTMLDivElement | null>(null);
-  const [bootFailed, setBootFailed] = useState(false);
-  const [ready, setReady] = useState(false);
+  const mountRef = useRef<HTMLDivElement | null>(null)
+  const [bootFailed, setBootFailed] = useState(false)
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
     if (!mountRef.current) {
-      return;
+      return
     }
 
-    let disposed = false;
-    let api: RoguelikeGameApi | null = null;
+    let disposed = false
+    let api: RoguelikeGameApi | null = null
 
     void createRoguelikeGame({
       mount: mountRef.current,
       onState,
       onLog,
+      onLevelUpChoices,
     })
       .then((instance) => {
         if (disposed) {
-          instance.destroy();
-          return;
+          instance.destroy()
+          return
         }
-        api = instance;
-        onReady(instance);
-        setReady(true);
+        api = instance
+        onReady(instance)
+        setReady(true)
       })
       .catch(() => {
-        setBootFailed(true);
-      });
+        setBootFailed(true)
+      })
 
     return () => {
-      disposed = true;
-      onReady(null);
-      api?.destroy();
-    };
-  }, []);
+      disposed = true
+      onReady(null)
+      api?.destroy()
+    }
+  }, [])
 
   return (
     <div className="relative overflow-hidden rounded-xl border border-zinc-700 bg-black">
@@ -68,7 +72,7 @@ function RoguelikeCanvas({
         </div>
       ) : null}
     </div>
-  );
+  )
 }
 
-export default memo(RoguelikeCanvas);
+export default memo(RoguelikeCanvas)
