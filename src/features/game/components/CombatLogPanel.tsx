@@ -1,9 +1,18 @@
 type CombatLogPanelProps = {
   logs: string[];
+  canSpendGoldForHeal: boolean;
+  goldHealCost: number;
+  onSpendGoldForHeal: () => void;
   onNewRun: () => void;
 };
 
-export function CombatLogPanel({ logs, onNewRun }: CombatLogPanelProps) {
+export function CombatLogPanel({
+  logs,
+  canSpendGoldForHeal,
+  goldHealCost,
+  onSpendGoldForHeal,
+  onNewRun,
+}: CombatLogPanelProps) {
   return (
     <aside className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
       <h3 className="mb-3 text-lg font-semibold">Combat Log</h3>
@@ -14,8 +23,16 @@ export function CombatLogPanel({ logs, onNewRun }: CombatLogPanelProps) {
       </ul>
       <button
         type="button"
+        onClick={onSpendGoldForHeal}
+        disabled={!canSpendGoldForHeal}
+        className="mt-4 w-full rounded-md border border-emerald-400/50 px-3 py-2 text-sm text-emerald-200 transition hover:bg-emerald-400/10 disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        Mend HP (-{goldHealCost} Gold)
+      </button>
+      <button
+        type="button"
         onClick={onNewRun}
-        className="mt-4 w-full rounded-md border border-cyan-400/50 px-3 py-2 text-sm text-cyan-200 transition hover:bg-cyan-400/10"
+        className="mt-3 w-full rounded-md border border-cyan-400/50 px-3 py-2 text-sm text-cyan-200 transition hover:bg-cyan-400/10"
       >
         New Run
       </button>

@@ -4,7 +4,18 @@ import { RoguelikeStatusPanel } from '../../features/game/components/RoguelikeSt
 import { useRoguelikeUi } from '../../features/game/hooks/useRoguelikeUi'
 
 export function RoguelikeGameWidget() {
-  const { hud, logs, status, setHud, pushLog, newRun, setApi } = useRoguelikeUi()
+  const {
+    hud,
+    logs,
+    status,
+    setHud,
+    pushLog,
+    newRun,
+    spendGoldForHeal,
+    canSpendGoldForHeal,
+    goldHealCost,
+    setApi,
+  } = useRoguelikeUi()
 
   return (
     <>
@@ -15,7 +26,13 @@ export function RoguelikeGameWidget() {
           <RoguelikeCanvas onState={setHud} onLog={pushLog} onReady={setApi} />
         </div>
 
-        <CombatLogPanel logs={logs} onNewRun={newRun} />
+        <CombatLogPanel
+          logs={logs}
+          canSpendGoldForHeal={canSpendGoldForHeal}
+          goldHealCost={goldHealCost}
+          onSpendGoldForHeal={spendGoldForHeal}
+          onNewRun={newRun}
+        />
       </section>
     </>
   )

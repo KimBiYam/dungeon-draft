@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 
 import type { HudState, RoguelikeGameApi } from '../engine/createRoguelikeGame'
+import { GOLD_HEAL_COST } from '../engine/contracts'
 
 const initialHud: HudState = {
   floor: 1,
@@ -41,6 +42,10 @@ export function useRoguelikeUi() {
     apiRef.current = api
   }
 
+  const spendGoldForHeal = () => {
+    apiRef.current?.spendGoldForHeal()
+  }
+
   return {
     hud,
     logs,
@@ -48,6 +53,9 @@ export function useRoguelikeUi() {
     setHud,
     pushLog,
     newRun,
+    spendGoldForHeal,
+    canSpendGoldForHeal: hud.gold >= GOLD_HEAL_COST && hud.hp < hud.maxHp && !hud.gameOver,
+    goldHealCost: GOLD_HEAL_COST,
     setApi,
   }
 }
