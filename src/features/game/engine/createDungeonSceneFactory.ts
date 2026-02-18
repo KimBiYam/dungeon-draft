@@ -123,22 +123,19 @@ export function createDungeonSceneFactory(
       this.input.keyboard?.on('keydown', (event: KeyboardEvent) => {
         if (event.repeat) return
 
-        if (event.code === 'KeyQ') {
-          event.preventDefault()
+        const command = this.inputMapper.resolveCommand(event.key, event.code)
+        if (!command) return
+
+        event.preventDefault()
+        if (command.type === 'upgradeWeapon') {
           this.spendGoldForWeaponUpgrade()
           return
         }
-        if (event.code === 'KeyE') {
-          event.preventDefault()
+        if (command.type === 'upgradeArmor') {
           this.spendGoldForArmorUpgrade()
           return
         }
-
-        const move = this.inputMapper.resolveMoveFromKey(event.key)
-        if (!move) return
-
-        event.preventDefault()
-        this.processTurn(move.x, move.y)
+        this.processTurn(command.move.x, command.move.y)
       })
     }
 

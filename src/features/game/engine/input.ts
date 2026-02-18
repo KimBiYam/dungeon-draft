@@ -20,4 +20,13 @@ export class InputMapper {
   resolveMoveFromKey(key: string): Pos | null {
     return KEY_TO_MOVE[key] ?? KEY_TO_MOVE[key.toLowerCase()] ?? null
   }
+
+  resolveCommand(key: string, code: string) {
+    if (code === 'KeyQ') return { type: 'upgradeWeapon' as const }
+    if (code === 'KeyE') return { type: 'upgradeArmor' as const }
+
+    const move = this.resolveMoveFromKey(key)
+    if (!move) return null
+    return { type: 'move' as const, move }
+  }
 }
