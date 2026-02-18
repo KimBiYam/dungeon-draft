@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { CombatLogPanel } from '../../features/game/components/CombatLogPanel'
+import { DeathRestartModal } from '../../features/game/components/DeathRestartModal'
 import { HelpModal } from '../../features/game/components/HelpModal'
 import { LevelUpChoiceModal } from '../../features/game/components/LevelUpChoiceModal'
 import { NewRunConfirmModal } from '../../features/game/components/NewRunConfirmModal'
@@ -11,6 +12,7 @@ import { useRoguelikeUi } from '../../features/game/hooks/useRoguelikeUi'
 export function RoguelikeGameWidget() {
   const [isHelpOpen, setIsHelpOpen] = useState(false)
   const [isNewRunConfirmOpen, setIsNewRunConfirmOpen] = useState(false)
+  const [isDeathRestartOpen, setIsDeathRestartOpen] = useState(false)
   const {
     hud,
     logs,
@@ -28,10 +30,25 @@ export function RoguelikeGameWidget() {
     setAudioVolumePercent,
     setApi,
   } = useRoguelikeUi()
+  const prevGameOverRef = useRef(hud.gameOver)
+
+  useEffect(() => {
+    if (!prevGameOverRef.current && hud.gameOver) {
+      setIsDeathRestartOpen(true)
+    }
+    if (!hud.gameOver) {
+      setIsDeathRestartOpen(false)
+    }
+    prevGameOverRef.current = hud.gameOver
+  }, [hud.gameOver])
 
   const isAnyModalOpen = useMemo(
-    () => isHelpOpen || isNewRunConfirmOpen || Boolean(levelUpChoices?.length),
-    [isHelpOpen, isNewRunConfirmOpen, levelUpChoices],
+    () =>
+      isHelpOpen ||
+      isNewRunConfirmOpen ||
+      isDeathRestartOpen ||
+      Boolean(levelUpChoices?.length),
+    [isHelpOpen, isNewRunConfirmOpen, isDeathRestartOpen, levelUpChoices],
   )
 
   useEffect(() => {
@@ -42,8 +59,10 @@ export function RoguelikeGameWidget() {
   const closeHelp = useCallback(() => setIsHelpOpen(false), [])
   const requestNewRun = useCallback(() => setIsNewRunConfirmOpen(true), [])
   const cancelNewRun = useCallback(() => setIsNewRunConfirmOpen(false), [])
+  const closeDeathRestart = useCallback(() => setIsDeathRestartOpen(false), [])
   const confirmNewRun = useCallback(() => {
     setIsNewRunConfirmOpen(false)
+    setIsDeathRestartOpen(false)
     newRun()
   }, [newRun])
 
@@ -74,6 +93,11 @@ export function RoguelikeGameWidget() {
 
       <HelpModal open={isHelpOpen} onClose={closeHelp} />
       <LevelUpChoiceModal choices={levelUpChoices} onPick={pickLevelUpChoice} />
+      <DeathRestartModal
+        open={isDeathRestartOpen}
+        onClose={closeDeathRestart}
+        onRestart={confirmNewRun}
+      />
       <NewRunConfirmModal
         open={isNewRunConfirmOpen}
         onCancel={cancelNewRun}
