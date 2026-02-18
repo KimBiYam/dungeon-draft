@@ -1,35 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 
 import type { HudState } from '../engine/createRoguelikeGame'
 import { useSessionStore } from '../store/sessionStore'
-import { useUiStore } from '../store/uiStore'
-import { AudioControls } from './AudioControls'
-import { HelpModal } from './HelpModal'
 import { StatCard } from './StatCard'
-
-type StatusPanelHeaderProps = {
-  onOpenHelp: () => void
-}
-
-function StatusPanelHeader({ onOpenHelp }: StatusPanelHeaderProps) {
-  'use memo'
-
-  return (
-    <div className="flex flex-wrap items-center justify-between gap-3">
-      <h2 className="text-2xl font-bold text-cyan-200">Dungeon Draft</h2>
-      <div className="flex flex-wrap items-center gap-2">
-        <AudioControls />
-        <button
-          type="button"
-          onClick={onOpenHelp}
-          className="rounded-md border border-cyan-300/40 px-3 py-1 text-xs font-semibold text-cyan-100 transition hover:bg-cyan-400/10"
-        >
-          Help
-        </button>
-      </div>
-    </div>
-  )
-}
+import { StatusPanelHeader } from './StatusPanelHeader'
 
 type StatusStatsProps = {
   status: string
@@ -49,16 +23,7 @@ function StatusStats({ status, hud }: StatusStatsProps) {
 }
 
 export function RoguelikeStatusPanel() {
-  const [isHelpOpen, setIsHelpOpen] = useState(false)
   const hud = useSessionStore((state) => state.hud)
-  const setUiInputBlockedByStatusPanel = useUiStore(
-    (state) => state.setUiInputBlockedByStatusPanel,
-  )
-
-  useEffect(() => {
-    setUiInputBlockedByStatusPanel(isHelpOpen)
-    return () => setUiInputBlockedByStatusPanel(false)
-  }, [isHelpOpen, setUiInputBlockedByStatusPanel])
 
   const status = useMemo(() => {
     if (hud.gameOver) {
@@ -66,16 +31,11 @@ export function RoguelikeStatusPanel() {
     }
     return `Floor ${hud.floor} · ${hud.enemiesLeft} enemies`
   }, [hud.floor, hud.enemiesLeft, hud.gameOver])
-  const openHelp = useCallback(() => setIsHelpOpen(true), [])
-  const closeHelp = useCallback(() => setIsHelpOpen(false), [])
 
   return (
-    <>
-      <section className="mb-5 rounded-xl border border-cyan-400/30 bg-linear-to-r from-cyan-950/70 via-zinc-900 to-emerald-950/70 p-5">
-        <StatusPanelHeader onOpenHelp={openHelp} />
-        <StatusStats status={status} hud={hud} />
-      </section>
-      <HelpModal open={isHelpOpen} onClose={closeHelp} />
-    </>
+    <section className="mb-5 rounded-xl border border-cyan-400/30 bg-linear-to-r from-cyan-950/70 via-zinc-900 to-emerald-950/70 p-5">
+      <StatusPanelHeader />
+      <StatusStats status={status} hud={hud} />
+    </section>
   )
 }
