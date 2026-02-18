@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react'
 
 import type { HudState, RoguelikeGameApi } from '../engine/createRoguelikeGame'
 import { GOLD_HEAL_COST } from '../engine/contracts'
+import { getArmorUpgradeCost, getWeaponUpgradeCost } from '../engine/economy'
 
 const initialHud: HudState = {
   floor: 1,
@@ -10,6 +11,8 @@ const initialHud: HudState = {
   atk: 7,
   def: 1,
   level: 1,
+  weaponLevel: 1,
+  armorLevel: 1,
   xp: 0,
   nextXp: 16,
   gold: 0,
@@ -46,6 +49,17 @@ export function useRoguelikeUi() {
     apiRef.current?.spendGoldForHeal()
   }
 
+  const spendGoldForWeaponUpgrade = () => {
+    apiRef.current?.spendGoldForWeaponUpgrade()
+  }
+
+  const spendGoldForArmorUpgrade = () => {
+    apiRef.current?.spendGoldForArmorUpgrade()
+  }
+
+  const weaponUpgradeCost = getWeaponUpgradeCost(hud.weaponLevel)
+  const armorUpgradeCost = getArmorUpgradeCost(hud.armorLevel)
+
   return {
     hud,
     logs,
@@ -54,8 +68,14 @@ export function useRoguelikeUi() {
     pushLog,
     newRun,
     spendGoldForHeal,
+    spendGoldForWeaponUpgrade,
+    spendGoldForArmorUpgrade,
     canSpendGoldForHeal: hud.gold >= GOLD_HEAL_COST && hud.hp < hud.maxHp && !hud.gameOver,
     goldHealCost: GOLD_HEAL_COST,
+    canUpgradeWeapon: hud.gold >= weaponUpgradeCost && !hud.gameOver,
+    canUpgradeArmor: hud.gold >= armorUpgradeCost && !hud.gameOver,
+    weaponUpgradeCost,
+    armorUpgradeCost,
     setApi,
   }
 }

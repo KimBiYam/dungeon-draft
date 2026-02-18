@@ -12,8 +12,14 @@ export function RoguelikeGameWidget() {
     pushLog,
     newRun,
     spendGoldForHeal,
+    spendGoldForWeaponUpgrade,
+    spendGoldForArmorUpgrade,
     canSpendGoldForHeal,
+    canUpgradeWeapon,
+    canUpgradeArmor,
     goldHealCost,
+    weaponUpgradeCost,
+    armorUpgradeCost,
     setApi,
   } = useRoguelikeUi()
 
@@ -31,6 +37,12 @@ export function RoguelikeGameWidget() {
           canSpendGoldForHeal={canSpendGoldForHeal}
           goldHealCost={goldHealCost}
           onSpendGoldForHeal={spendGoldForHeal}
+          canUpgradeWeapon={canUpgradeWeapon}
+          canUpgradeArmor={canUpgradeArmor}
+          weaponUpgradeCost={weaponUpgradeCost}
+          armorUpgradeCost={armorUpgradeCost}
+          onUpgradeWeapon={spendGoldForWeaponUpgrade}
+          onUpgradeArmor={spendGoldForArmorUpgrade}
           onNewRun={newRun}
         />
       </section>

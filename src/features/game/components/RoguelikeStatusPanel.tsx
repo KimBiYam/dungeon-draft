@@ -19,7 +19,10 @@ export function RoguelikeStatusPanel({
       <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-6">
         <Stat label="Status" value={status} />
         <Stat label="HP" value={`${hud.hp} / ${hud.maxHp}`} />
-        <Stat label="ATK / DEF" value={`${hud.atk} / ${hud.def}`} />
+        <Stat
+          label="ATK / DEF"
+          value={`${hud.atk} / ${hud.def} (+${hud.weaponLevel - 1} / +${hud.armorLevel - 1})`}
+        />
         <Stat label="Level" value={hud.level} />
         <Stat label="XP" value={`${hud.xp} / ${hud.nextXp}`} />
         <Stat label="Gold" value={hud.gold} />
