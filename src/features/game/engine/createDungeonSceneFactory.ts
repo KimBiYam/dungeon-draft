@@ -222,6 +222,7 @@ export function createDungeonSceneFactory(
             this.run.hp = clamp(this.run.hp - damage, 0, this.run.maxHp)
             this.pushLog(`${this.describeTrap(trap.kind)} trap! -${damage} HP.`)
             this.audio.play('trapTrigger')
+            this.trapHitFlash()
             this.cameraShake(110)
             if (this.run.hp <= 0) {
               this.triggerGameOver(`You were slain by a trap on floor ${this.run.floor}.`)
@@ -331,6 +332,23 @@ export function createDungeonSceneFactory(
 
     private cameraShake(duration: number) {
       this.cameras.main.shake(duration, 0.004)
+    }
+
+    private trapHitFlash() {
+      const flash = this.add
+        .rectangle(0, 0, this.scale.width, this.scale.height, 0xdc2626, 0)
+        .setOrigin(0, 0)
+        .setScrollFactor(0)
+        .setDepth(120)
+
+      this.tweens.add({
+        targets: flash,
+        alpha: 0.28,
+        duration: 90,
+        yoyo: true,
+        ease: 'Sine.Out',
+        onComplete: () => flash.destroy(),
+      })
     }
 
     private hitFlash(pos: Pos, color: number) {
