@@ -15,7 +15,7 @@ export function RoguelikeGameWidget() {
   )
 
   return (
-    <>
+    <div className="min-h-[780px]">
       <GameApiSettingsSync />
       <GameInputBlockSync />
       <InitialClassSelectModal />
@@ -36,6 +36,6 @@ export function RoguelikeGameWidget() {
           <NewRunConfirmModal />
         </>
       )}
-    </>
+    </div>
   )
 }
