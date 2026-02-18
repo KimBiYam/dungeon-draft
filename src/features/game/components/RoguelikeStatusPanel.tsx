@@ -13,8 +13,7 @@ export function RoguelikeStatusPanel({
     <section className="mb-5 rounded-xl border border-cyan-400/30 bg-linear-to-r from-cyan-950/70 via-zinc-900 to-emerald-950/70 p-5">
       <h2 className="text-2xl font-bold text-cyan-200">Ashen Depths</h2>
       <p className="mt-2 text-sm text-zinc-300">
-        Phaser-powered roguelike combat. Controls: `WASD` / Arrow Keys /
-        Space(wait) / Q(weapon) / E(armor)
+        Controls: `WASD` / Arrow Keys / Space(wait) / Q(weapon) / E(armor)
       </p>
       <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-6">
         <Stat label="Status" value={status} />
