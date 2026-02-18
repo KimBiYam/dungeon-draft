@@ -6,6 +6,8 @@ export type SfxEvent =
   | 'enemyDefeat'
   | 'heroHit'
   | 'pickupPotion'
+  | 'trapTrigger'
+  | 'chestOpen'
   | 'descendFloor'
   | 'levelUp'
   | 'wallBlocked'
@@ -61,6 +63,17 @@ export function createSfxPattern(event: SfxEvent): SfxStep[] {
       return [
         { frequency: 620, duration: 0.04, volume: 0.8, wave: 'sine' },
         { frequency: 760, duration: 0.06, volume: 1, wave: 'sine' },
+      ]
+    case 'trapTrigger':
+      return [
+        { frequency: 210, duration: 0.05, volume: 1, wave: 'sawtooth' },
+        { frequency: 160, duration: 0.05, volume: 0.9, wave: 'sawtooth' },
+      ]
+    case 'chestOpen':
+      return [
+        { frequency: 680, duration: 0.04, volume: 0.8, wave: 'triangle' },
+        { frequency: 840, duration: 0.05, volume: 0.9, wave: 'triangle' },
+        { frequency: 980, duration: 0.06, volume: 1, wave: 'triangle' },
       ]
     case 'descendFloor':
       return [

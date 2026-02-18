@@ -11,12 +11,24 @@ export type Enemy = {
   monsterName: string
   monsterTint: number
 }
+export type TrapKind = 'spike' | 'flame' | 'venom'
+export type TrapTile = {
+  pos: Pos
+  kind: TrapKind
+}
+export type ChestRarity = 'common' | 'rare'
+export type ChestTile = {
+  pos: Pos
+  rarity: ChestRarity
+}
 export type FloorData = {
   width: number
   height: number
   walls: Set<string>
   enemies: Enemy[]
   potions: Pos[]
+  traps: TrapTile[]
+  chests: ChestTile[]
   exit: Pos
 }
 export type RunState = {
@@ -123,9 +135,23 @@ export function createFloor(floor: number): FloorData {
   })
 
   const potions: Pos[] = Array.from({ length: 2 + Math.floor(floor / 2) }, findFree)
+  const traps: TrapTile[] = Array.from(
+    { length: 2 + Math.floor(floor / 2) },
+    () => ({
+      pos: findFree(),
+      kind: ['spike', 'flame', 'venom'][randomInt(0, 2)] as TrapKind,
+    }),
+  )
+  const chests: ChestTile[] = Array.from(
+    { length: 1 + Math.floor(floor / 3) },
+    () => ({
+      pos: findFree(),
+      rarity: randomInt(1, 100) <= 25 ? 'rare' : 'common',
+    }),
+  )
   const exit = findFree()
 
-  return { width, height, walls, enemies, potions, exit }
+  return { width, height, walls, enemies, potions, traps, chests, exit }
 }
 
 export function createInitialRun(): RunState {

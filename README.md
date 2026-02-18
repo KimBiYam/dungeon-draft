@@ -8,6 +8,8 @@ Phaser + React(TanStack Start) 기반의 로그라이크 게임입니다.
 - Grid-based turn combat
 - Multi-floor dungeon progression
 - Level-up draft system (pick 1 of 3 cards)
+- Random traps (spike / flame / venom) that trigger on step
+- Random treasure chests (common / rare) with dynamic rewards
 - Hero/monster sprite animations with HP bars
 - Limited vision (fog-of-war)
 - In-game SFX with mute/volume control

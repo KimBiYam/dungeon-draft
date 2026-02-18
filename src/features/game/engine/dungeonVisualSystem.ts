@@ -1,11 +1,13 @@
 import type Phaser from 'phaser'
 
 import {
+  type ChestTile,
   MAX_MAP_H,
   MAX_MAP_W,
   clamp,
   keyOf,
   TILE,
+  type TrapTile,
   type Pos,
   type RunState,
 } from './model'
@@ -35,9 +37,13 @@ export class DungeonVisualSystem {
   private wallGroup?: Phaser.GameObjects.Group
   private enemyGroup?: Phaser.GameObjects.Group
   private potionGroup?: Phaser.GameObjects.Group
+  private trapGroup?: Phaser.GameObjects.Group
+  private chestGroup?: Phaser.GameObjects.Group
   private exitOrb?: Phaser.GameObjects.Container
   private enemyVisuals = new Map<string, EnemyVisual>()
   private potionVisuals = new Map<string, Phaser.GameObjects.Container>()
+  private trapVisuals = new Map<string, Phaser.GameObjects.Container>()
+  private chestVisuals = new Map<string, Phaser.GameObjects.Container>()
   private fogTiles = new Map<string, Phaser.GameObjects.Rectangle>()
 
   constructor(private readonly scene: Phaser.Scene) {}
@@ -80,6 +86,8 @@ export class DungeonVisualSystem {
     this.wallGroup?.clear(true, true)
     this.enemyGroup?.clear(true, true)
     this.potionGroup?.clear(true, true)
+    this.trapGroup?.clear(true, true)
+    this.chestGroup?.clear(true, true)
     if (this.exitOrb) {
       this.scene.tweens.killTweensOf(this.exitOrb)
       this.scene.tweens.killTweensOf(this.exitOrb.list)
@@ -88,12 +96,16 @@ export class DungeonVisualSystem {
     }
     this.enemyVisuals.clear()
     this.potionVisuals.clear()
+    this.trapVisuals.clear()
+    this.chestVisuals.clear()
     this.fogTiles.forEach((tile) => tile.destroy())
     this.fogTiles.clear()
 
     this.wallGroup = this.scene.add.group()
     this.enemyGroup = this.scene.add.group()
     this.potionGroup = this.scene.add.group()
+    this.trapGroup = this.scene.add.group()
+    this.chestGroup = this.scene.add.group()
 
     for (let y = 0; y < run.floorData.height; y++) {
       for (let x = 0; x < run.floorData.width; x++) {
@@ -115,6 +127,16 @@ export class DungeonVisualSystem {
       const potion = this.createPotionVisual(pos)
       this.potionGroup.add(potion)
       this.potionVisuals.set(keyOf(pos), potion)
+    }
+    for (const trap of run.floorData.traps) {
+      const trapVisual = this.createTrapVisual(trap)
+      this.trapGroup.add(trapVisual)
+      this.trapVisuals.set(keyOf(trap.pos), trapVisual)
+    }
+    for (const chest of run.floorData.chests) {
+      const chestVisual = this.createChestVisual(chest)
+      this.chestGroup.add(chestVisual)
+      this.chestVisuals.set(keyOf(chest.pos), chestVisual)
     }
 
     const exitOrb = this.createPortalVisual(run.floorData.exit)
@@ -192,6 +214,26 @@ export class DungeonVisualSystem {
     this.scene.tweens.killTweensOf(visual)
     visual.destroy()
     this.potionVisuals.delete(key)
+  }
+
+  consumeTrapVisual(pos: Pos) {
+    const key = keyOf(pos)
+    const visual = this.trapVisuals.get(key)
+    if (!visual) return
+    this.scene.tweens.killTweensOf(visual)
+    this.scene.tweens.killTweensOf(visual.list)
+    visual.destroy()
+    this.trapVisuals.delete(key)
+  }
+
+  consumeChestVisual(pos: Pos) {
+    const key = keyOf(pos)
+    const visual = this.chestVisuals.get(key)
+    if (!visual) return
+    this.scene.tweens.killTweensOf(visual)
+    this.scene.tweens.killTweensOf(visual.list)
+    visual.destroy()
+    this.chestVisuals.delete(key)
   }
 
   tweenPlayerTo(pos: Pos, onUpdate: () => void) {
@@ -408,6 +450,60 @@ export class DungeonVisualSystem {
       ease: 'Sine.InOut',
     })
 
+    return container
+  }
+
+  private createTrapVisual(trap: TrapTile) {
+    const x = trap.pos.x * TILE + TILE / 2
+    const y = trap.pos.y * TILE + TILE / 2
+    const base = this.scene.add.ellipse(0, 0, 24, 8, 0x09090b, 0.65)
+    let marker: Phaser.GameObjects.GameObject
+
+    if (trap.kind === 'spike') {
+      marker = this.scene.add.triangle(0, -2, 0, 10, 6, -8, 12, 10, 0x94a3b8, 0.95)
+    } else if (trap.kind === 'flame') {
+      marker = this.scene.add.triangle(0, -2, 0, 10, 6, -10, 12, 10, 0xfb7185, 0.95)
+    } else {
+      marker = this.scene.add.ellipse(0, -2, 13, 9, 0x84cc16, 0.9)
+    }
+
+    const container = this.scene.add.container(x, y, [base, marker])
+    container.setDepth(2)
+    container.setSize(24, 20)
+    container.setPosition(x, y)
+    this.scene.tweens.add({
+      targets: marker,
+      alpha: { from: 0.55, to: 1 },
+      duration: 700,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.InOut',
+    })
+    return container
+  }
+
+  private createChestVisual(chest: ChestTile) {
+    const x = chest.pos.x * TILE + TILE / 2
+    const y = chest.pos.y * TILE + TILE / 2
+    const wood = this.scene.add.rectangle(0, 3, 18, 12, 0x7c2d12, 0.95)
+    wood.setStrokeStyle(1, 0xea580c, 0.9)
+    const lid = this.scene.add.rectangle(0, -4, 20, 8, 0x9a3412, 0.95)
+    lid.setStrokeStyle(1, 0xfb923c, 0.9)
+    const lockColor = chest.rarity === 'rare' ? 0xfde047 : 0xd4d4d8
+    const lock = this.scene.add.rectangle(0, 2, 4, 5, lockColor, 0.95)
+
+    const container = this.scene.add.container(x, y, [wood, lid, lock])
+    container.setDepth(2)
+    container.setSize(20, 20)
+    container.setPosition(x, y)
+    this.scene.tweens.add({
+      targets: [lid, lock],
+      y: '-=1.2',
+      duration: 650,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.InOut',
+    })
     return container
   }
 }

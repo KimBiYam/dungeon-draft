@@ -6,6 +6,7 @@ import { InputMapper } from './input'
 import {
   START_POS,
   TILE,
+  type TrapKind,
   clamp,
   createFloor,
   createInitialRun,
@@ -204,6 +205,8 @@ export function createDungeonSceneFactory(
           this.run.player = target
           const isExit = samePos(target, this.run.floorData.exit)
           const potionIdx = this.run.floorData.potions.findIndex((p) => samePos(p, target))
+          const trapIdx = this.run.floorData.traps.findIndex((t) => samePos(t.pos, target))
+          const chestIdx = this.run.floorData.chests.findIndex((c) => samePos(c.pos, target))
           if (potionIdx >= 0) {
             this.run.floorData.potions.splice(potionIdx, 1)
             const heal = randomInt(7, 12)
@@ -211,6 +214,27 @@ export function createDungeonSceneFactory(
             this.pushLog(`Potion! +${heal} HP.`)
             this.audio.play('pickupPotion')
             this.visuals.consumePotionVisual(target)
+          }
+          if (trapIdx >= 0) {
+            const trap = this.run.floorData.traps.splice(trapIdx, 1)[0]
+            const damage = this.applyTrapEffect(trap.kind)
+            this.visuals.consumeTrapVisual(target)
+            this.run.hp = clamp(this.run.hp - damage, 0, this.run.maxHp)
+            this.pushLog(`${this.describeTrap(trap.kind)} trap! -${damage} HP.`)
+            this.audio.play('trapTrigger')
+            this.cameraShake(110)
+            if (this.run.hp <= 0) {
+              this.triggerGameOver(`You were slain by a trap on floor ${this.run.floor}.`)
+              this.pushState()
+              return
+            }
+          }
+          if (chestIdx >= 0) {
+            const chest = this.run.floorData.chests.splice(chestIdx, 1)[0]
+            this.visuals.consumeChestVisual(target)
+            const rewardLog = this.applyChestReward(chest.rarity)
+            this.pushLog(rewardLog)
+            this.audio.play('chestOpen')
           }
 
           if (isExit) {
@@ -266,14 +290,7 @@ export function createDungeonSceneFactory(
           this.hitFlash(this.run.player, 0x38bdf8)
           this.playOnceThen(this.visuals.getPlayerSprite(), HERO_HURT_ANIM, HERO_IDLE_ANIM)
           if (this.run.hp <= 0) {
-            this.run.hp = 0
-            this.run.gameOver = true
-            this.pushLog(`You died on floor ${this.run.floor}. Press New Run.`)
-            callbacks.onLevelUpChoices(null)
-            this.activeLevelUpChoices = null
-            this.pendingLevelUps = 0
-            this.audio.play('death')
-            this.cameraShake(200)
+            this.triggerGameOver(`You died on floor ${this.run.floor}. Press New Run.`)
             return
           }
           continue
@@ -330,6 +347,50 @@ export function createDungeonSceneFactory(
         duration: 180,
         onComplete: () => flash.destroy(),
       })
+    }
+
+    private describeTrap(kind: TrapKind) {
+      if (kind === 'spike') return 'Spike'
+      if (kind === 'flame') return 'Flame'
+      return 'Venom'
+    }
+
+    private applyTrapEffect(kind: TrapKind) {
+      if (kind === 'spike') return randomInt(4, 8)
+      if (kind === 'flame') return randomInt(6, 10)
+      return randomInt(3, 7)
+    }
+
+    private applyChestReward(rarity: 'common' | 'rare') {
+      if (rarity === 'rare') {
+        if (randomInt(0, 1) === 0) {
+          this.run.atk += 2
+          return 'Rare chest! ATK +2.'
+        }
+        this.run.def += 2
+        return 'Rare chest! DEF +2.'
+      }
+
+      if (this.run.hp < this.run.maxHp && randomInt(0, 1) === 0) {
+        const heal = randomInt(5, 10)
+        this.run.hp = clamp(this.run.hp + heal, 0, this.run.maxHp)
+        return `Chest loot! +${heal} HP.`
+      }
+
+      const xp = randomInt(6, 12)
+      this.run.xp += xp
+      return `Chest loot! +${xp} XP.`
+    }
+
+    private triggerGameOver(message: string) {
+      this.run.hp = 0
+      this.run.gameOver = true
+      this.pushLog(message)
+      callbacks.onLevelUpChoices(null)
+      this.activeLevelUpChoices = null
+      this.pendingLevelUps = 0
+      this.audio.play('death')
+      this.cameraShake(200)
     }
 
     private pushState() {

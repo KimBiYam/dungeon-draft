@@ -21,7 +21,7 @@ describe('createFloor map size randomization', () => {
     }
   })
 
-  it('never places enemies or potions or exit on the start tile', () => {
+  it('never places objects on the start tile', () => {
     const startKey = keyOf(START_POS)
 
     for (let i = 0; i < 100; i++) {
@@ -29,6 +29,8 @@ describe('createFloor map size randomization', () => {
       const occupied = [
         ...floor.enemies.map((enemy) => keyOf(enemy.pos)),
         ...floor.potions.map((potion) => keyOf(potion)),
+        ...floor.traps.map((trap) => keyOf(trap.pos)),
+        ...floor.chests.map((chest) => keyOf(chest.pos)),
         keyOf(floor.exit),
       ]
       expect(occupied).not.toContain(startKey)
