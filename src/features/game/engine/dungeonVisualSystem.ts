@@ -11,9 +11,9 @@ import {
   type RunState,
 } from './model'
 import {
-  HERO_FRAME_0,
-  HERO_IDLE_ANIM,
-  HERO_WALK_ANIM,
+  getHeroFrame0Key,
+  getHeroIdleAnimKey,
+  getHeroWalkAnimKey,
   getMonsterFrame0Key,
   getMonsterIdleAnimKey,
 } from './spriteSheet'
@@ -27,6 +27,7 @@ type EnemyVisual = {
 
 export class DungeonVisualSystem {
   private static readonly VISION_RADIUS = 3
+  private currentHeroClass: RunState['heroClass'] = 'knight'
   private playerSprite?: Phaser.GameObjects.Sprite
   private playerHpBg?: Phaser.GameObjects.Rectangle
   private playerHpFill?: Phaser.GameObjects.Rectangle
@@ -78,6 +79,7 @@ export class DungeonVisualSystem {
   }
 
   rebuildFloorObjects(run: RunState) {
+    this.currentHeroClass = run.heroClass
     this.killPlayerTweens()
 
     this.wallGroup?.clear(true, true)
@@ -180,11 +182,13 @@ export class DungeonVisualSystem {
       this.playerSprite = this.scene.add.sprite(
         run.player.x * TILE + TILE / 2,
         run.player.y * TILE + TILE / 2,
-        HERO_FRAME_0,
+        getHeroFrame0Key(run.heroClass),
       )
       this.playerSprite.setDisplaySize(30, 30)
-      this.playerSprite.play(HERO_IDLE_ANIM)
+      this.playerSprite.play(getHeroIdleAnimKey(run.heroClass))
     } else {
+      this.playerSprite.setTexture(getHeroFrame0Key(run.heroClass))
+      this.playerSprite.play(getHeroIdleAnimKey(run.heroClass), true)
       this.playerSprite.setPosition(
         run.player.x * TILE + TILE / 2,
         run.player.y * TILE + TILE / 2,
@@ -228,8 +232,8 @@ export class DungeonVisualSystem {
       y: pos.y * TILE + TILE / 2,
       duration: 110,
       ease: 'Quad.Out',
-      onStart: () => this.playerSprite?.play(HERO_WALK_ANIM, true),
-      onComplete: () => this.playerSprite?.play(HERO_IDLE_ANIM, true),
+      onStart: () => this.playerSprite?.play(getHeroWalkAnimKey(this.currentHeroClass), true),
+      onComplete: () => this.playerSprite?.play(getHeroIdleAnimKey(this.currentHeroClass), true),
       onUpdate,
     })
   }

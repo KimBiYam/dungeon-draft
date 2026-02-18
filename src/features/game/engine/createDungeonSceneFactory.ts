@@ -20,11 +20,11 @@ import {
 } from './model'
 import { MonsterRoleService } from './monster'
 import {
-  HERO_ATTACK_ANIM,
-  HERO_HURT_ANIM,
-  HERO_IDLE_ANIM,
   ensureAnimations,
   ensureSpriteSheets,
+  getHeroAttackAnimKey,
+  getHeroHurtAnimKey,
+  getHeroIdleAnimKey,
   getMonsterAttackAnimKey,
   getMonsterHurtAnimKey,
   getMonsterIdleAnimKey,
@@ -184,7 +184,11 @@ export function createDungeonSceneFactory(
         const enemy = this.run.floorData.enemies.find((e) => samePos(e.pos, target))
         if (enemy) {
           const dmg = this.heroRole.calculateAttackDamage(this.run.atk)
-          this.playOnceThen(this.visuals.getPlayerSprite(), HERO_ATTACK_ANIM, HERO_IDLE_ANIM)
+          this.playOnceThen(
+            this.visuals.getPlayerSprite(),
+            getHeroAttackAnimKey(this.run.heroClass),
+            getHeroIdleAnimKey(this.run.heroClass),
+          )
           this.audio.play('heroAttack')
           enemy.hp -= dmg
           this.pushLog(`You slash for ${dmg}.`)
@@ -296,7 +300,11 @@ export function createDungeonSceneFactory(
           this.pushLog(`${enemy.monsterName} hits for ${dmg}.`)
           this.audio.play('heroHit')
           this.hitFlash(this.run.player, 0x38bdf8)
-          this.playOnceThen(this.visuals.getPlayerSprite(), HERO_HURT_ANIM, HERO_IDLE_ANIM)
+          this.playOnceThen(
+            this.visuals.getPlayerSprite(),
+            getHeroHurtAnimKey(this.run.heroClass),
+            getHeroIdleAnimKey(this.run.heroClass),
+          )
           if (this.run.hp <= 0) {
             this.triggerGameOver(`You died on floor ${this.run.floor}. Press New Run.`)
             return

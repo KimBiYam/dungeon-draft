@@ -1,12 +1,31 @@
 import type Phaser from 'phaser'
 
 import { MonsterTypeCatalog, type MonsterType } from './monsterTypes'
+import type { HeroClassId } from './model'
 
-export const HERO_FRAME_0 = 'hero_frame_0'
-export const HERO_IDLE_ANIM = 'hero-idle'
-export const HERO_WALK_ANIM = 'hero-walk'
-export const HERO_ATTACK_ANIM = 'hero-attack'
-export const HERO_HURT_ANIM = 'hero-hurt'
+function getHeroFrameKey(heroClass: HeroClassId, frameIndex: number) {
+  return `hero_${heroClass}_frame_${frameIndex}`
+}
+
+export function getHeroFrame0Key(heroClass: HeroClassId) {
+  return getHeroFrameKey(heroClass, 0)
+}
+
+export function getHeroIdleAnimKey(heroClass: HeroClassId) {
+  return `hero-${heroClass}-idle`
+}
+
+export function getHeroWalkAnimKey(heroClass: HeroClassId) {
+  return `hero-${heroClass}-walk`
+}
+
+export function getHeroAttackAnimKey(heroClass: HeroClassId) {
+  return `hero-${heroClass}-attack`
+}
+
+export function getHeroHurtAnimKey(heroClass: HeroClassId) {
+  return `hero-${heroClass}-hurt`
+}
 
 export function getMonsterFrame0Key(typeId: string) {
   return `monster_${typeId}_frame_0`
@@ -29,34 +48,18 @@ export function getMonsterHurtAnimKey(typeId: string) {
 }
 
 export function ensureSpriteSheets(scene: Phaser.Scene) {
-  for (let i = 0; i < 12; i++) {
-    const key = `hero_frame_${i}`
-    if (scene.textures.exists(key)) {
-      continue
+  const heroClasses: HeroClassId[] = ['knight', 'berserker', 'ranger']
+  for (const heroClass of heroClasses) {
+    for (let i = 0; i < 12; i++) {
+      const key = getHeroFrameKey(heroClass, i)
+      if (scene.textures.exists(key)) {
+        continue
+      }
+      const g = scene.add.graphics()
+      drawHeroFrame(g, heroClass, i)
+      g.generateTexture(key, 32, 32)
+      g.destroy()
     }
-    const g = scene.add.graphics()
-    const walk = i >= 2 && i <= 5
-    const attack = i >= 6 && i <= 8
-    const hurt = i >= 9 && i <= 10
-    const legOffset = walk ? (i % 2 === 0 ? -2 : 2) : 0
-
-    g.fillStyle(0x000000, 0)
-    g.fillRect(0, 0, 32, 32)
-    g.fillStyle(0xe2e8f0, 1)
-    g.fillCircle(16, 8, 5)
-    g.fillStyle(hurt ? 0x60a5fa : 0x2563eb, 1)
-    g.fillRect(10, 12, 12, 12)
-    g.fillStyle(0x0f172a, 1)
-    g.fillRect(10 + legOffset, 24, 4, 6)
-    g.fillRect(18 - legOffset, 24, 4, 6)
-    g.fillStyle(0xf59e0b, 1)
-    const swordX = attack ? 24 : 22
-    const swordY = attack ? 8 : 11
-    g.fillRect(swordX, swordY, 2, 12)
-    g.fillStyle(0xcbd5e1, 1)
-    g.fillRect(swordX + 1, swordY, 4, 2)
-    g.generateTexture(key, 32, 32)
-    g.destroy()
   }
 
   const monsterTypes = new MonsterTypeCatalog().list()
@@ -71,6 +74,72 @@ export function ensureSpriteSheets(scene: Phaser.Scene) {
       g.generateTexture(key, 32, 32)
       g.destroy()
     }
+  }
+}
+
+function drawHeroFrame(
+  g: Phaser.GameObjects.Graphics,
+  heroClass: HeroClassId,
+  frame: number,
+) {
+  const walk = frame >= 2 && frame <= 5
+  const attack = frame >= 6 && frame <= 8
+  const hurt = frame >= 9 && frame <= 10
+  const legOffset = walk ? (frame % 2 === 0 ? -2 : 2) : 0
+
+  g.fillStyle(0x000000, 0)
+  g.fillRect(0, 0, 32, 32)
+
+  if (heroClass === 'knight') {
+    g.fillStyle(0xe2e8f0, 1)
+    g.fillCircle(16, 8, 5)
+    g.fillStyle(hurt ? 0x93c5fd : 0x2563eb, 1)
+    g.fillRect(10, 12, 12, 12)
+    g.fillStyle(0x0f172a, 1)
+    g.fillRect(10 + legOffset, 24, 4, 6)
+    g.fillRect(18 - legOffset, 24, 4, 6)
+    g.fillStyle(0xf59e0b, 1)
+    const swordX = attack ? 24 : 22
+    const swordY = attack ? 8 : 11
+    g.fillRect(swordX, swordY, 2, 12)
+    g.fillStyle(0xcbd5e1, 1)
+    g.fillRect(swordX + 1, swordY, 4, 2)
+    return
+  }
+
+  if (heroClass === 'berserker') {
+    g.fillStyle(0xfca5a5, 1)
+    g.fillCircle(16, 8, 5)
+    g.fillStyle(hurt ? 0xfda4af : 0xb91c1c, 1)
+    g.fillRect(10, 12, 12, 12)
+    g.fillStyle(0x1f2937, 1)
+    g.fillRect(10 + legOffset, 24, 4, 6)
+    g.fillRect(18 - legOffset, 24, 4, 6)
+    const axeX = attack ? 23 : 21
+    const axeY = attack ? 9 : 12
+    g.fillStyle(0x78350f, 1)
+    g.fillRect(axeX, axeY, 2, 12)
+    g.fillStyle(0xd1d5db, 1)
+    g.fillTriangle(axeX + 1, axeY, axeX + 8, axeY + 2, axeX + 1, axeY + 5)
+    return
+  }
+
+  g.fillStyle(0xfee2e2, 1)
+  g.fillCircle(16, 8, 5)
+  g.fillStyle(hurt ? 0x86efac : 0x15803d, 1)
+  g.fillRect(10, 12, 12, 12)
+  g.fillStyle(0x111827, 1)
+  g.fillRect(10 + legOffset, 24, 4, 6)
+  g.fillRect(18 - legOffset, 24, 4, 6)
+  const bowX = attack ? 23 : 22
+  const bowY = attack ? 9 : 12
+  g.fillStyle(0x92400e, 1)
+  g.fillRect(bowX, bowY, 2, 11)
+  g.fillStyle(0xfef3c7, 1)
+  g.fillRect(bowX - 1, bowY, 1, 11)
+  g.fillStyle(0xfde68a, 1)
+  if (attack) {
+    g.fillRect(25, 10, 6, 1)
   }
 }
 
@@ -196,37 +265,48 @@ function drawMonsterFrame(g: Phaser.GameObjects.Graphics, monsterType: MonsterTy
 }
 
 export function ensureAnimations(scene: Phaser.Scene) {
-  if (!scene.anims.exists(HERO_IDLE_ANIM)) {
-    scene.anims.create({
-      key: HERO_IDLE_ANIM,
-      frames: [{ key: 'hero_frame_0' }, { key: 'hero_frame_1' }],
-      frameRate: 4,
-      repeat: -1,
-    })
-  }
-  if (!scene.anims.exists(HERO_WALK_ANIM)) {
-    scene.anims.create({
-      key: HERO_WALK_ANIM,
-      frames: [2, 3, 4, 5].map((i) => ({ key: `hero_frame_${i}` })),
-      frameRate: 10,
-      repeat: -1,
-    })
-  }
-  if (!scene.anims.exists(HERO_ATTACK_ANIM)) {
-    scene.anims.create({
-      key: HERO_ATTACK_ANIM,
-      frames: [6, 7, 8].map((i) => ({ key: `hero_frame_${i}` })),
-      frameRate: 14,
-      repeat: 0,
-    })
-  }
-  if (!scene.anims.exists(HERO_HURT_ANIM)) {
-    scene.anims.create({
-      key: HERO_HURT_ANIM,
-      frames: [9, 10].map((i) => ({ key: `hero_frame_${i}` })),
-      frameRate: 10,
-      repeat: 0,
-    })
+  const heroClasses: HeroClassId[] = ['knight', 'berserker', 'ranger']
+  for (const heroClass of heroClasses) {
+    const idleKey = getHeroIdleAnimKey(heroClass)
+    const walkKey = getHeroWalkAnimKey(heroClass)
+    const attackKey = getHeroAttackAnimKey(heroClass)
+    const hurtKey = getHeroHurtAnimKey(heroClass)
+
+    if (!scene.anims.exists(idleKey)) {
+      scene.anims.create({
+        key: idleKey,
+        frames: [
+          { key: getHeroFrameKey(heroClass, 0) },
+          { key: getHeroFrameKey(heroClass, 1) },
+        ],
+        frameRate: 4,
+        repeat: -1,
+      })
+    }
+    if (!scene.anims.exists(walkKey)) {
+      scene.anims.create({
+        key: walkKey,
+        frames: [2, 3, 4, 5].map((i) => ({ key: getHeroFrameKey(heroClass, i) })),
+        frameRate: 10,
+        repeat: -1,
+      })
+    }
+    if (!scene.anims.exists(attackKey)) {
+      scene.anims.create({
+        key: attackKey,
+        frames: [6, 7, 8].map((i) => ({ key: getHeroFrameKey(heroClass, i) })),
+        frameRate: 14,
+        repeat: 0,
+      })
+    }
+    if (!scene.anims.exists(hurtKey)) {
+      scene.anims.create({
+        key: hurtKey,
+        frames: [9, 10].map((i) => ({ key: getHeroFrameKey(heroClass, i) })),
+        frameRate: 10,
+        repeat: 0,
+      })
+    }
   }
 
   const monsterTypes = new MonsterTypeCatalog().list()
