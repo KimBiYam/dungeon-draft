@@ -12,6 +12,56 @@ import {
 } from '../model'
 
 describe('createFloor map size randomization', () => {
+  it('always places an exit reachable from the start tile', () => {
+    const deltas = [
+      { x: 1, y: 0 },
+      { x: -1, y: 0 },
+      { x: 0, y: 1 },
+      { x: 0, y: -1 },
+    ]
+
+    const canReachExit = (floor: ReturnType<typeof createFloor>) => {
+      const queue = [{ ...START_POS }]
+      const visited = new Set<string>([keyOf(START_POS)])
+
+      while (queue.length > 0) {
+        const current = queue.shift()
+        if (!current) {
+          continue
+        }
+        if (keyOf(current) === keyOf(floor.exit)) {
+          return true
+        }
+
+        for (const delta of deltas) {
+          const next = { x: current.x + delta.x, y: current.y + delta.y }
+          if (
+            next.x < 0 ||
+            next.y < 0 ||
+            next.x >= floor.width ||
+            next.y >= floor.height
+          ) {
+            continue
+          }
+
+          const nextKey = keyOf(next)
+          if (visited.has(nextKey) || floor.walls.has(nextKey)) {
+            continue
+          }
+          visited.add(nextKey)
+          queue.push(next)
+        }
+      }
+
+      return false
+    }
+
+    for (let i = 0; i < 300; i++) {
+      const floor = createFloor(1)
+      expect(canReachExit(floor)).toBe(true)
+    }
+  })
+
   it('always creates floor dimensions within configured range', () => {
     for (let i = 0; i < 200; i++) {
       const floor = createFloor(1)

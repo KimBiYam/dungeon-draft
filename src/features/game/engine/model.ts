@@ -126,7 +126,59 @@ export function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value))
 }
 
-export function createFloor(floor: number): FloorData {
+function canReachTarget(
+  width: number,
+  height: number,
+  walls: Set<string>,
+  start: Pos,
+  target: Pos,
+) {
+  const queue: Pos[] = [{ ...start }]
+  const visited = new Set<string>([keyOf(start)])
+  const deltas = [
+    { x: 1, y: 0 },
+    { x: -1, y: 0 },
+    { x: 0, y: 1 },
+    { x: 0, y: -1 },
+  ]
+
+  while (queue.length > 0) {
+    const current = queue.shift()
+    if (!current) continue
+    if (samePos(current, target)) return true
+
+    for (const delta of deltas) {
+      const next = { x: current.x + delta.x, y: current.y + delta.y }
+      if (next.x < 0 || next.y < 0 || next.x >= width || next.y >= height) {
+        continue
+      }
+      const nextKey = keyOf(next)
+      if (walls.has(nextKey) || visited.has(nextKey)) {
+        continue
+      }
+      visited.add(nextKey)
+      queue.push(next)
+    }
+  }
+
+  return false
+}
+
+function carveGuaranteedPath(walls: Set<string>, start: Pos, target: Pos) {
+  let x = start.x
+  let y = start.y
+  walls.delete(keyOf(start))
+  while (x !== target.x) {
+    x += target.x > x ? 1 : -1
+    walls.delete(keyOf({ x, y }))
+  }
+  while (y !== target.y) {
+    y += target.y > y ? 1 : -1
+    walls.delete(keyOf({ x, y }))
+  }
+}
+
+function createFloorOnce(floor: number): FloorData {
   const width = randomInt(MIN_MAP_W, MAX_MAP_W)
   const height = randomInt(MIN_MAP_H, MAX_MAP_H)
   const monsterCatalog = new MonsterTypeCatalog()
@@ -196,6 +248,27 @@ export function createFloor(floor: number): FloorData {
   const exit = findFree()
 
   return { width, height, walls, enemies, potions, traps, chests, exit }
+}
+
+export function createFloor(floor: number): FloorData {
+  for (let attempt = 0; attempt < 64; attempt++) {
+    const candidate = createFloorOnce(floor)
+    if (
+      canReachTarget(
+        candidate.width,
+        candidate.height,
+        candidate.walls,
+        START_POS,
+        candidate.exit,
+      )
+    ) {
+      return candidate
+    }
+  }
+
+  const fallback = createFloorOnce(floor)
+  carveGuaranteedPath(fallback.walls, START_POS, fallback.exit)
+  return fallback
 }
 
 export function createInitialRun(heroClass: HeroClassId = 'knight'): RunState {
