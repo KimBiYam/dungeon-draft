@@ -403,18 +403,6 @@ export class DungeonVisualSystem {
     }
   }
 
-  setTrapRevealed(pos: Pos, revealed: boolean) {
-    const visual = this.trapVisuals.get(keyOf(pos))
-    if (!visual) return
-    visual.setAlpha(revealed ? 0.95 : 0)
-  }
-
-  setRevealedTraps(keys: Set<string>) {
-    this.trapVisuals.forEach((visual, trapKey) => {
-      visual.setAlpha(keys.has(trapKey) ? 0.95 : 0)
-    })
-  }
-
   getPlayerSprite() {
     return this.playerSprite
   }

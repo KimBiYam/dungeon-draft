@@ -1,8 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 
 import { createRoguelikeGame } from '../engine/createRoguelikeGame'
-import { getMetaUpgradeDefinition } from '../engine/meta'
-import { useMetaStore } from '../store/metaStore'
 import { useRuntimeStore } from '../store/runtimeStore'
 import { useSessionStore } from '../store/sessionStore'
 
@@ -20,7 +18,6 @@ export default function RoguelikeCanvas({ enabled }: RoguelikeCanvasProps) {
   const pushLog = useSessionStore((state) => state.pushLog)
   const setLevelUpChoices = useSessionStore((state) => state.setLevelUpChoices)
   const setFloorEventChoices = useSessionStore((state) => state.setFloorEventChoices)
-  const applyRunMetaXp = useMetaStore((state) => state.applyRunMetaXp)
   const setApi = useRuntimeStore((state) => state.setApi)
 
   useEffect(() => {
@@ -39,15 +36,6 @@ export default function RoguelikeCanvas({ enabled }: RoguelikeCanvasProps) {
       onLog: pushLog,
       onLevelUpChoices: setLevelUpChoices,
       onFloorEventChoices: setFloorEventChoices,
-      getMetaProgress: () => useMetaStore.getState().progress,
-      onRunEnded: (reward) => {
-        const { unlockedNow } = applyRunMetaXp(reward)
-        pushLog(`Run archived. Meta XP +${reward}.`)
-        unlockedNow.forEach((id) => {
-          const upgrade = getMetaUpgradeDefinition(id)
-          pushLog(`Meta unlock: ${upgrade?.title ?? id}`)
-        })
-      },
     })
       .then((instance) => {
         if (disposed) {
@@ -70,7 +58,6 @@ export default function RoguelikeCanvas({ enabled }: RoguelikeCanvasProps) {
     heroClass,
     pushLog,
     setApi,
-    applyRunMetaXp,
     setFloorEventChoices,
     setHud,
     setLevelUpChoices,

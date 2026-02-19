@@ -1,6 +1,5 @@
 import type { LevelUpChoice } from './hero'
 import type { FloorEventChoice } from './floorEvent'
-import type { MetaProgress } from './meta'
 import type { HeroClassId, HudState } from './model'
 
 export type CreateRoguelikeGameOptions = {
@@ -10,8 +9,6 @@ export type CreateRoguelikeGameOptions = {
   onLog: (message: string) => void
   onLevelUpChoices: (choices: LevelUpChoice[] | null) => void
   onFloorEventChoices: (choices: FloorEventChoice[] | null) => void
-  getMetaProgress: () => MetaProgress
-  onRunEnded: (reward: number) => void
 }
 
 export type RoguelikeGameApi = {

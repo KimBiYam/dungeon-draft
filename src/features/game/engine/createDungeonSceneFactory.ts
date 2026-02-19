@@ -4,7 +4,6 @@ import { DungeonVisualSystem } from './dungeonVisualSystem'
 import { FloorEventService, type FloorEventChoice } from './floorEvent'
 import { HeroRoleService, type LevelUpChoice } from './hero'
 import { InputMapper } from './input'
-import { calculateRunMetaXpReward, resolveMetaRunBonuses } from './meta'
 import {
   type FloorEventTile,
   START_POS,
@@ -13,7 +12,7 @@ import {
   type TrapKind,
   clamp,
   createFloor,
-  createInitialRunWithMeta,
+  createInitialRun,
   keyOf,
   randomInt,
   samePos,
@@ -40,10 +39,7 @@ export function createDungeonSceneFactory(
   callbacks: CreateRoguelikeGameOptions,
 ) {
   return class DungeonScene extends Phaser.Scene {
-    private run: RunState = createInitialRunWithMeta(
-      callbacks.initialHeroClass,
-      resolveMetaRunBonuses(callbacks.getMetaProgress()),
-    )
+    private run: RunState = createInitialRun(callbacks.initialHeroClass)
     private uiInputBlocked = false
     private pendingLevelUps = 0
     private activeLevelUpChoices: LevelUpChoice[] | null = null
@@ -59,9 +55,7 @@ export function createDungeonSceneFactory(
     private readonly audio = new RetroSfx(
       () => (this.sound as unknown as { context?: AudioContext }).context,
     )
-    private revealedTrapKeys = new Set<string>()
     private portalResonanceUsed = false
-    private runEndRewardReported = false
 
     constructor() {
       super('dungeon')
@@ -69,16 +63,13 @@ export function createDungeonSceneFactory(
 
     create() {
       this.heroRole.resetBuildSynergy()
-      this.runEndRewardReported = false
       ensureSpriteSheets(this)
       ensureAnimations(this)
       this.visuals.drawBoard()
       this.visuals.createUiOverlay()
       this.bindInput()
       this.visuals.rebuildFloorObjects(this.run)
-      this.revealedTrapKeys.clear()
       this.portalResonanceUsed = false
-      this.syncTrapRevealVisuals()
       callbacks.onLevelUpChoices(null)
       callbacks.onFloorEventChoices(null)
       callbacks.onLog(
@@ -90,21 +81,15 @@ export function createDungeonSceneFactory(
 
     newRun(heroClass: HeroClassId) {
       this.heroRole.resetBuildSynergy()
-      this.run = createInitialRunWithMeta(
-        heroClass,
-        resolveMetaRunBonuses(callbacks.getMetaProgress()),
-      )
-      this.runEndRewardReported = false
+      this.run = createInitialRun(heroClass)
       this.pendingLevelUps = 0
       this.activeLevelUpChoices = null
       this.activeFloorEventChoices = null
       this.activeFloorEventTile = null
-      this.revealedTrapKeys.clear()
       this.portalResonanceUsed = false
       callbacks.onLevelUpChoices(null)
       callbacks.onFloorEventChoices(null)
       this.visuals.rebuildFloorObjects(this.run)
-      this.syncTrapRevealVisuals()
       callbacks.onLog(`New ${heroClass} run started.`)
       this.audio.play('newRun')
       this.pushState()
@@ -309,7 +294,6 @@ export function createDungeonSceneFactory(
             const trap = this.run.floorData.traps.splice(trapIdx, 1)[0]
             const damage = this.applyTrapEffect(trap.kind)
             this.visuals.consumeTrapVisual(target)
-            this.revealedTrapKeys.delete(keyOf(target))
             this.run.hp = clamp(this.run.hp - damage, 0, this.run.maxHp)
             this.pushLog(`${this.describeTrap(trap.kind)} trap! -${damage} HP.`)
             this.audio.play('trapTrigger')
@@ -321,8 +305,6 @@ export function createDungeonSceneFactory(
               return
             }
           }
-
-          this.revealNearbyTraps()
 
           if (
             !isExit &&
@@ -356,13 +338,11 @@ export function createDungeonSceneFactory(
             this.run.hp = clamp(this.run.hp + 6, 0, this.run.maxHp)
             this.pushLog(`Descended to floor ${this.run.floor}.`)
             this.audio.play('descendFloor')
-            this.revealedTrapKeys.clear()
             this.portalResonanceUsed = false
             this.activeFloorEventChoices = null
             this.activeFloorEventTile = null
             callbacks.onFloorEventChoices(null)
             this.visuals.rebuildFloorObjects(this.run)
-            this.syncTrapRevealVisuals()
             this.pushState()
             return
           }
@@ -619,11 +599,6 @@ export function createDungeonSceneFactory(
       this.pendingLevelUps = 0
       this.audio.play('death')
       this.cameraShake(200)
-      if (!this.runEndRewardReported) {
-        const reward = calculateRunMetaXpReward(this.run)
-        callbacks.onRunEnded(reward)
-        this.runEndRewardReported = true
-      }
     }
 
     private pushState() {
@@ -636,37 +611,5 @@ export function createDungeonSceneFactory(
       callbacks.onLog(message)
     }
 
-    private revealNearbyTraps() {
-      const nearbyKeys = this.terrainRole.getNearbyTrapKeys(
-        this.run.player,
-        this.run.floorData.traps,
-        1,
-      )
-      let newlyRevealed = 0
-      for (const trapKey of nearbyKeys) {
-        if (this.revealedTrapKeys.has(trapKey)) {
-          continue
-        }
-        this.revealedTrapKeys.add(trapKey)
-        const [xText, yText] = trapKey.split(',')
-        const x = Number(xText)
-        const y = Number(yText)
-        if (Number.isFinite(x) && Number.isFinite(y)) {
-          this.visuals.setTrapRevealed({ x, y }, true)
-        }
-        newlyRevealed += 1
-      }
-      if (newlyRevealed > 0) {
-        this.pushLog(
-          newlyRevealed === 1
-            ? 'You sense a hidden trap nearby.'
-            : `You sense ${newlyRevealed} hidden traps nearby.`,
-        )
-      }
-    }
-
-    private syncTrapRevealVisuals() {
-      this.visuals.setRevealedTraps(this.revealedTrapKeys)
-    }
   }
 }
