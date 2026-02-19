@@ -1,4 +1,5 @@
 import { MonsterTypeCatalog, scaleMonsterStats } from './monsterTypes'
+import type { MetaRunBonuses } from './meta'
 
 export type Pos = { x: number; y: number }
 export type Enemy = {
@@ -289,22 +290,107 @@ export function createFloor(floor: number): FloorData {
 }
 
 export function createInitialRun(heroClass: HeroClassId = 'knight'): RunState {
+  return createInitialRunWithMeta(heroClass, {
+    bonusMaxHp: 0,
+    bonusStartPotions: 0,
+  })
+}
+
+function createInitialRunWithBonuses(
+  heroClass: HeroClassId,
+  bonuses: MetaRunBonuses,
+): RunState {
   const heroDefinition = getHeroClassDefinition(heroClass)
+  const maxHp = heroDefinition.baseHp + bonuses.bonusMaxHp
+  const floorData = createFloor(1)
+  applyBonusStartingPotions(floorData, bonuses.bonusStartPotions)
   return {
     heroClass,
     floor: 1,
     turn: 0,
-    hp: heroDefinition.baseHp,
-    maxHp: heroDefinition.baseHp,
+    hp: maxHp,
+    maxHp,
     atk: heroDefinition.baseAtk,
     def: heroDefinition.baseDef,
     level: 1,
     xp: 0,
     nextXp: 16,
     player: { ...START_POS },
-    floorData: createFloor(1),
+    floorData,
     gameOver: false,
   }
+}
+
+export function createInitialRunWithMeta(
+  heroClass: HeroClassId = 'knight',
+  bonuses: MetaRunBonuses,
+): RunState {
+  return createInitialRunWithBonuses(heroClass, bonuses)
+}
+
+function applyBonusStartingPotions(floorData: FloorData, count: number) {
+  for (let i = 0; i < count; i++) {
+    const pos = findNearestFreeTile(floorData, START_POS)
+    if (!pos) {
+      return
+    }
+    floorData.potions.push(pos)
+  }
+}
+
+function findNearestFreeTile(floorData: FloorData, center: Pos): Pos | null {
+  const queue: Pos[] = [{ ...center }]
+  const visited = new Set<string>([keyOf(center)])
+  const occupied = new Set<string>([
+    ...floorData.enemies.map((enemy) => keyOf(enemy.pos)),
+    ...floorData.potions.map((potion) => keyOf(potion)),
+    ...floorData.traps.map((trap) => keyOf(trap.pos)),
+    ...floorData.chests.map((chest) => keyOf(chest.pos)),
+    ...floorData.events.map((eventTile) => keyOf(eventTile.pos)),
+    keyOf(floorData.exit),
+    keyOf(START_POS),
+  ])
+  const deltas = [
+    { x: 1, y: 0 },
+    { x: -1, y: 0 },
+    { x: 0, y: 1 },
+    { x: 0, y: -1 },
+  ]
+
+  while (queue.length > 0) {
+    const current = queue.shift()
+    if (!current) continue
+    const currentKey = keyOf(current)
+    const inBounds =
+      current.x > 0 &&
+      current.y > 0 &&
+      current.x < floorData.width - 1 &&
+      current.y < floorData.height - 1
+
+    if (inBounds && !floorData.walls.has(currentKey) && !occupied.has(currentKey)) {
+      return current
+    }
+
+    for (const delta of deltas) {
+      const next = { x: current.x + delta.x, y: current.y + delta.y }
+      if (
+        next.x < 0 ||
+        next.y < 0 ||
+        next.x >= floorData.width ||
+        next.y >= floorData.height
+      ) {
+        continue
+      }
+      const nextKey = keyOf(next)
+      if (visited.has(nextKey)) {
+        continue
+      }
+      visited.add(nextKey)
+      queue.push(next)
+    }
+  }
+
+  return null
 }
 
 export function toHud(run: RunState): HudState {

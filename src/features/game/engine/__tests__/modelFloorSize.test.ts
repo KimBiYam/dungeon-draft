@@ -8,6 +8,7 @@ import {
   START_POS,
   createFloor,
   createInitialRun,
+  createInitialRunWithMeta,
   keyOf,
 } from '../model'
 
@@ -99,5 +100,16 @@ describe('createFloor map size randomization', () => {
     expect(ranger.heroClass).toBe('ranger')
     expect(knight.maxHp).toBeGreaterThan(ranger.maxHp)
     expect(berserker.atk).toBeGreaterThan(knight.atk)
+  })
+
+  it('applies meta start bonuses on run creation', () => {
+    const run = createInitialRunWithMeta('knight', {
+      bonusMaxHp: 2,
+      bonusStartPotions: 1,
+    })
+
+    expect(run.maxHp).toBe(38)
+    expect(run.hp).toBe(38)
+    expect(run.floorData.potions.length).toBeGreaterThanOrEqual(3)
   })
 })

@@ -5,6 +5,7 @@ import type {
   LevelUpChoice,
   RoguelikeGameApi,
 } from '../engine/createRoguelikeGame'
+import type { MetaProgress, MetaUpgradeId } from '../engine/meta'
 
 export const initialHud: HudState = {
   heroClass: 'knight',
@@ -62,4 +63,9 @@ export type RuntimeStoreState = {
   newRun: (heroClass: HeroClassId) => void
   pickLevelUpChoice: (choiceId: string) => void
   pickFloorEventChoice: (choiceId: string) => void
+}
+
+export type MetaStoreState = {
+  progress: MetaProgress
+  applyRunMetaXp: (reward: number) => { unlockedNow: MetaUpgradeId[] }
 }

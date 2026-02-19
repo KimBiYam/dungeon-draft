@@ -4,6 +4,7 @@ import { DungeonVisualSystem } from './dungeonVisualSystem'
 import { FloorEventService, type FloorEventChoice } from './floorEvent'
 import { HeroRoleService, type LevelUpChoice } from './hero'
 import { InputMapper } from './input'
+import { calculateRunMetaXpReward, resolveMetaRunBonuses } from './meta'
 import {
   type FloorEventTile,
   START_POS,
@@ -12,7 +13,7 @@ import {
   type TrapKind,
   clamp,
   createFloor,
-  createInitialRun,
+  createInitialRunWithMeta,
   keyOf,
   randomInt,
   samePos,
@@ -39,7 +40,10 @@ export function createDungeonSceneFactory(
   callbacks: CreateRoguelikeGameOptions,
 ) {
   return class DungeonScene extends Phaser.Scene {
-    private run: RunState = createInitialRun(callbacks.initialHeroClass)
+    private run: RunState = createInitialRunWithMeta(
+      callbacks.initialHeroClass,
+      resolveMetaRunBonuses(callbacks.getMetaProgress()),
+    )
     private uiInputBlocked = false
     private pendingLevelUps = 0
     private activeLevelUpChoices: LevelUpChoice[] | null = null
@@ -57,6 +61,7 @@ export function createDungeonSceneFactory(
     )
     private revealedTrapKeys = new Set<string>()
     private portalResonanceUsed = false
+    private runEndRewardReported = false
 
     constructor() {
       super('dungeon')
@@ -64,6 +69,7 @@ export function createDungeonSceneFactory(
 
     create() {
       this.heroRole.resetBuildSynergy()
+      this.runEndRewardReported = false
       ensureSpriteSheets(this)
       ensureAnimations(this)
       this.visuals.drawBoard()
@@ -84,7 +90,11 @@ export function createDungeonSceneFactory(
 
     newRun(heroClass: HeroClassId) {
       this.heroRole.resetBuildSynergy()
-      this.run = createInitialRun(heroClass)
+      this.run = createInitialRunWithMeta(
+        heroClass,
+        resolveMetaRunBonuses(callbacks.getMetaProgress()),
+      )
+      this.runEndRewardReported = false
       this.pendingLevelUps = 0
       this.activeLevelUpChoices = null
       this.activeFloorEventChoices = null
@@ -595,6 +605,9 @@ export function createDungeonSceneFactory(
     }
 
     private triggerGameOver(message: string) {
+      if (this.run.gameOver) {
+        return
+      }
       this.run.hp = 0
       this.run.gameOver = true
       this.pushLog(message)
@@ -606,6 +619,11 @@ export function createDungeonSceneFactory(
       this.pendingLevelUps = 0
       this.audio.play('death')
       this.cameraShake(200)
+      if (!this.runEndRewardReported) {
+        const reward = calculateRunMetaXpReward(this.run)
+        callbacks.onRunEnded(reward)
+        this.runEndRewardReported = true
+      }
     }
 
     private pushState() {
