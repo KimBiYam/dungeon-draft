@@ -6,6 +6,7 @@ import { FloorEventFlow } from './floorEventFlow'
 import { HeroRoleService } from './hero'
 import { InputMapper } from './input'
 import { LevelUpFlow } from './levelUpFlow'
+import { SceneInputController } from './sceneInputController'
 import { EnemyPhaseResolver } from './enemyPhaseResolver'
 import { RunNotifier } from './runNotifier'
 import { RunLifecycleService } from './runLifecycleService'
@@ -54,6 +55,17 @@ export function createDungeonSceneFactory(
     private readonly floorEventFlow = new FloorEventFlow(
       this.floorEventRole,
       this.notifier,
+    )
+    private readonly inputController = new SceneInputController(
+      this.inputMapper,
+      {
+        getLevelUpChoices: () => this.levelUpFlow.getActiveChoices(),
+        getFloorEventChoices: () => this.floorEventFlow.getActiveChoices(),
+        isUiInputBlocked: () => this.uiInputBlocked,
+        chooseLevelUpReward: (choiceId) => this.chooseLevelUpReward(choiceId),
+        chooseFloorEventOption: (choiceId) => this.chooseFloorEventOption(choiceId),
+        processTurn: (dx, dy) => this.processTurn(dx, dy),
+      },
     )
     private readonly visuals = new DungeonVisualSystem(this)
     private readonly effects = new SceneEffects(this, Phaser)
@@ -139,33 +151,7 @@ export function createDungeonSceneFactory(
 
     private bindInput() {
       this.input.keyboard?.on('keydown', (event: KeyboardEvent) => {
-        if (event.repeat) return
-
-        const levelUpChoiceIndex = this.inputMapper.resolveLevelUpChoiceIndex(
-          event.key,
-          event.code,
-        )
-        const activeLevelUpChoices = this.levelUpFlow.getActiveChoices()
-        if (activeLevelUpChoices && levelUpChoiceIndex !== null) {
-          event.preventDefault()
-          const choice = activeLevelUpChoices[levelUpChoiceIndex]
-          if (choice) this.chooseLevelUpReward(choice.id)
-          return
-        }
-        const activeFloorEventChoices = this.floorEventFlow.getActiveChoices()
-        if (activeFloorEventChoices && levelUpChoiceIndex !== null) {
-          event.preventDefault()
-          const choice = activeFloorEventChoices[levelUpChoiceIndex]
-          if (choice) this.chooseFloorEventOption(choice.id)
-          return
-        }
-
-        const command = this.inputMapper.resolveCommand(event.key)
-        if (!command) return
-
-        event.preventDefault()
-        if (this.uiInputBlocked || activeLevelUpChoices || activeFloorEventChoices) return
-        this.processTurn(command.move.x, command.move.y)
+        this.inputController.handleKeyDown(event)
       })
     }
 
