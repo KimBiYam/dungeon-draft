@@ -1,7 +1,8 @@
 import type { CreateRoguelikeGameOptions } from './contracts'
 import { RetroSfx } from './audio'
 import { DungeonVisualSystem } from './dungeonVisualSystem'
-import { FloorEventService, type FloorEventChoice } from './floorEvent'
+import { FloorEventService } from './floorEvent'
+import { FloorEventFlow } from './floorEventFlow'
 import { HeroRoleService } from './hero'
 import { InputMapper } from './input'
 import { LevelUpFlow } from './levelUpFlow'
@@ -12,7 +13,6 @@ import { SceneEffects } from './sceneEffects'
 import { TurnResolver } from './turnResolver'
 import { LootService } from './lootService'
 import {
-  type FloorEventTile,
   type HeroClassId,
   keyOf,
   randomInt,
@@ -34,8 +34,6 @@ export function createDungeonSceneFactory(
   return class DungeonScene extends Phaser.Scene {
     private run: RunState
     private uiInputBlocked = false
-    private activeFloorEventChoices: FloorEventChoice[] | null = null
-    private activeFloorEventTile: FloorEventTile | null = null
     private readonly inputMapper = new InputMapper()
     private readonly heroRole = new HeroRoleService(randomInt)
     private readonly monsterRole = new MonsterRoleService(randomInt)
@@ -52,6 +50,10 @@ export function createDungeonSceneFactory(
       this.heroRole,
       this.notifier,
       this.audio.play.bind(this.audio, 'levelUp'),
+    )
+    private readonly floorEventFlow = new FloorEventFlow(
+      this.floorEventRole,
+      this.notifier,
     )
     private readonly visuals = new DungeonVisualSystem(this)
     private readonly effects = new SceneEffects(this, Phaser)
@@ -90,8 +92,7 @@ export function createDungeonSceneFactory(
       this.heroRole.resetBuildSynergy()
       this.run = this.runLifecycle.createNewRun(heroClass)
       this.levelUpFlow.reset()
-      this.activeFloorEventChoices = null
-      this.activeFloorEventTile = null
+      this.floorEventFlow.clear()
       this.portalResonanceUsed = false
       this.notifier.resetTransientUi()
       this.visuals.rebuildFloorObjects(this.run)
@@ -101,7 +102,7 @@ export function createDungeonSceneFactory(
     }
 
     chooseLevelUpReward(choiceId: string) {
-      if (!this.levelUpFlow.hasActiveChoices() || this.activeFloorEventChoices) {
+      if (!this.levelUpFlow.hasActiveChoices() || this.floorEventFlow.hasActiveChoices()) {
         return
       }
 
@@ -112,28 +113,13 @@ export function createDungeonSceneFactory(
     }
 
     chooseFloorEventOption(choiceId: string) {
-      if (!this.activeFloorEventTile || !this.activeFloorEventChoices || this.run.gameOver) {
+      const result = this.floorEventFlow.choose(this.run, choiceId)
+      if (!result) {
         return
       }
 
-      const log = this.floorEventRole.applyChoice(
-        this.run,
-        this.activeFloorEventTile.kind,
-        choiceId,
-      )
-      if (!log) {
-        return
-      }
-
-      this.run.floorData.events = this.run.floorData.events.filter(
-        (tile) => tile.id !== this.activeFloorEventTile?.id,
-      )
-      this.visuals.consumeEventVisual(this.activeFloorEventTile.pos)
-      this.activeFloorEventTile = null
-      this.activeFloorEventChoices = null
-      this.notifier.clearFloorEventChoices()
-      this.pushLog(log)
-      if (this.run.hp <= 0) {
+      this.visuals.consumeEventVisual(result.consumedPos)
+      if (result.resultedInDeath) {
         this.triggerGameOver(`You fell during a floor event on floor ${this.run.floor}.`)
       }
       this.pushState()
@@ -166,9 +152,10 @@ export function createDungeonSceneFactory(
           if (choice) this.chooseLevelUpReward(choice.id)
           return
         }
-        if (this.activeFloorEventChoices && levelUpChoiceIndex !== null) {
+        const activeFloorEventChoices = this.floorEventFlow.getActiveChoices()
+        if (activeFloorEventChoices && levelUpChoiceIndex !== null) {
           event.preventDefault()
-          const choice = this.activeFloorEventChoices[levelUpChoiceIndex]
+          const choice = activeFloorEventChoices[levelUpChoiceIndex]
           if (choice) this.chooseFloorEventOption(choice.id)
           return
         }
@@ -177,22 +164,14 @@ export function createDungeonSceneFactory(
         if (!command) return
 
         event.preventDefault()
-        if (this.uiInputBlocked || activeLevelUpChoices || this.activeFloorEventChoices) return
+        if (this.uiInputBlocked || activeLevelUpChoices || activeFloorEventChoices) return
         this.processTurn(command.move.x, command.move.y)
       })
     }
 
-    private offerFloorEventChoices(tile: FloorEventTile) {
-      const choices = this.floorEventRole.createChoices(tile.kind)
-      this.activeFloorEventTile = tile
-      this.activeFloorEventChoices = choices
-      this.notifier.setFloorEventChoices(choices)
-      this.pushLog(`${tile.kind.toUpperCase()} event: choose your option.`)
-    }
-
     private processTurn(dx: number, dy: number) {
       if (this.run.gameOver || this.levelUpFlow.hasActiveChoices()) return
-      if (this.activeFloorEventChoices) return
+      if (this.floorEventFlow.hasActiveChoices()) return
 
       const target = { x: this.run.player.x + dx, y: this.run.player.y + dy }
       const moving = dx !== 0 || dy !== 0
@@ -258,7 +237,7 @@ export function createDungeonSceneFactory(
                 this.visuals.updateVision(this.run)
               },
               () => {
-                this.offerFloorEventChoices(tile)
+                this.floorEventFlow.offer(tile)
                 this.pushState()
               },
             )
@@ -271,9 +250,7 @@ export function createDungeonSceneFactory(
             this.pushLog(`Descended to floor ${this.run.floor}.`)
             this.audio.play('descendFloor')
             this.portalResonanceUsed = false
-            this.activeFloorEventChoices = null
-            this.activeFloorEventTile = null
-            this.notifier.clearFloorEventChoices()
+            this.floorEventFlow.clear()
             this.visuals.rebuildFloorObjects(this.run)
             this.pushState()
             return
@@ -316,8 +293,7 @@ export function createDungeonSceneFactory(
       this.pushLog(message)
       this.notifier.resetTransientUi()
       this.levelUpFlow.clearActiveChoices()
-      this.activeFloorEventChoices = null
-      this.activeFloorEventTile = null
+      this.floorEventFlow.clear()
       this.audio.play('death')
       this.effects.cameraShake(200)
     }
