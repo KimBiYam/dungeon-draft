@@ -29,7 +29,7 @@ export default function RoguelikeCanvas({ enabled }: RoguelikeCanvasProps) {
     setBootFailed(false)
     setReady(false)
 
-    void createRoguelikeGame({
+    createRoguelikeGame({
       mount: mountRef.current,
       initialHeroClass: heroClass,
       onState: setHud,
