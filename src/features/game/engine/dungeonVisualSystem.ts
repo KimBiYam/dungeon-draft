@@ -9,6 +9,7 @@ import {
   keyOf,
   TILE,
   type Pos,
+  type TrapKind,
   type RunState,
 } from './model'
 import {
@@ -38,11 +39,14 @@ export class DungeonVisualSystem {
   private wallGroup?: Phaser.GameObjects.Group
   private enemyGroup?: Phaser.GameObjects.Group
   private potionGroup?: Phaser.GameObjects.Group
+  private trapGroup?: Phaser.GameObjects.Group
   private chestGroup?: Phaser.GameObjects.Group
   private eventGroup?: Phaser.GameObjects.Group
+  private portalAuraGroup?: Phaser.GameObjects.Group
   private exitOrb?: Phaser.GameObjects.Container
   private enemyVisuals = new Map<string, EnemyVisual>()
   private potionVisuals = new Map<string, Phaser.GameObjects.Container>()
+  private trapVisuals = new Map<string, Phaser.GameObjects.Container>()
   private chestVisuals = new Map<string, Phaser.GameObjects.Container>()
   private eventVisuals = new Map<string, Phaser.GameObjects.Container>()
   private fogTiles = new Map<string, Phaser.GameObjects.Rectangle>()
@@ -88,8 +92,10 @@ export class DungeonVisualSystem {
     this.wallGroup?.clear(true, true)
     this.enemyGroup?.clear(true, true)
     this.potionGroup?.clear(true, true)
+    this.trapGroup?.clear(true, true)
     this.chestGroup?.clear(true, true)
     this.eventGroup?.clear(true, true)
+    this.portalAuraGroup?.clear(true, true)
     if (this.exitOrb) {
       this.scene.tweens.killTweensOf(this.exitOrb)
       this.scene.tweens.killTweensOf(this.exitOrb.list)
@@ -98,6 +104,7 @@ export class DungeonVisualSystem {
     }
     this.enemyVisuals.clear()
     this.potionVisuals.clear()
+    this.trapVisuals.clear()
     this.chestVisuals.clear()
     this.eventVisuals.clear()
     this.fogTiles.forEach((tile) => tile.destroy())
@@ -106,8 +113,10 @@ export class DungeonVisualSystem {
     this.wallGroup = this.scene.add.group()
     this.enemyGroup = this.scene.add.group()
     this.potionGroup = this.scene.add.group()
+    this.trapGroup = this.scene.add.group()
     this.chestGroup = this.scene.add.group()
     this.eventGroup = this.scene.add.group()
+    this.portalAuraGroup = this.scene.add.group()
 
     for (let y = 0; y < run.floorData.height; y++) {
       for (let x = 0; x < run.floorData.width; x++) {
@@ -130,6 +139,11 @@ export class DungeonVisualSystem {
       this.potionGroup.add(potion)
       this.potionVisuals.set(keyOf(pos), potion)
     }
+    for (const trap of run.floorData.traps) {
+      const trapVisual = this.createTrapVisual(trap.pos, trap.kind)
+      this.trapGroup.add(trapVisual)
+      this.trapVisuals.set(keyOf(trap.pos), trapVisual)
+    }
     for (const chest of run.floorData.chests) {
       const chestVisual = this.createChestVisual(chest)
       this.chestGroup.add(chestVisual)
@@ -143,6 +157,7 @@ export class DungeonVisualSystem {
 
     const exitOrb = this.createPortalVisual(run.floorData.exit)
     this.exitOrb = exitOrb
+    this.createPortalAuraTiles(run.floorData.exit, run.floorData.width, run.floorData.height)
 
     for (const enemy of run.floorData.enemies) {
       this.addEnemyVisual(enemy)
@@ -180,8 +195,13 @@ export class DungeonVisualSystem {
   }
 
   consumeTrapVisual(pos: Pos) {
-    // Traps are intentionally invisible until triggered.
-    void pos
+    const key = keyOf(pos)
+    const visual = this.trapVisuals.get(key)
+    if (!visual) return
+    this.scene.tweens.killTweensOf(visual)
+    this.scene.tweens.killTweensOf(visual.list)
+    visual.destroy()
+    this.trapVisuals.delete(key)
   }
 
   consumeChestVisual(pos: Pos) {
@@ -383,6 +403,18 @@ export class DungeonVisualSystem {
     }
   }
 
+  setTrapRevealed(pos: Pos, revealed: boolean) {
+    const visual = this.trapVisuals.get(keyOf(pos))
+    if (!visual) return
+    visual.setAlpha(revealed ? 0.95 : 0)
+  }
+
+  setRevealedTraps(keys: Set<string>) {
+    this.trapVisuals.forEach((visual, trapKey) => {
+      visual.setAlpha(keys.has(trapKey) ? 0.95 : 0)
+    })
+  }
+
   getPlayerSprite() {
     return this.playerSprite
   }
@@ -432,6 +464,24 @@ export class DungeonVisualSystem {
     return container
   }
 
+  private createTrapVisual(pos: Pos, kind: TrapKind) {
+    const x = pos.x * TILE + TILE / 2
+    const y = pos.y * TILE + TILE / 2
+    const tone = {
+      spike: { fill: 0x94a3b8, stroke: 0xe2e8f0 },
+      flame: { fill: 0xf97316, stroke: 0xfdba74 },
+      venom: { fill: 0x16a34a, stroke: 0x86efac },
+    }[kind]
+    const base = this.scene.add.polygon(0, 0, [-10, 8, 0, -10, 10, 8], tone.fill, 0.85)
+    base.setStrokeStyle(1, tone.stroke, 0.9)
+    const rune = this.scene.add.circle(0, 2, 3, tone.stroke, 0.75)
+    const container = this.scene.add.container(x, y, [base, rune])
+    container.setDepth(2)
+    container.setSize(20, 20)
+    container.setAlpha(0)
+    return container
+  }
+
   private createPortalVisual(pos: Pos) {
     const x = pos.x * TILE + TILE / 2
     const y = pos.y * TILE + TILE / 2
@@ -465,6 +515,38 @@ export class DungeonVisualSystem {
     })
 
     return container
+  }
+
+  private createPortalAuraTiles(exit: Pos, width: number, height: number) {
+    if (!this.portalAuraGroup) return
+    const positions = [
+      { x: exit.x + 1, y: exit.y },
+      { x: exit.x - 1, y: exit.y },
+      { x: exit.x, y: exit.y + 1 },
+      { x: exit.x, y: exit.y - 1 },
+    ].filter((pos) => pos.x > 0 && pos.y > 0 && pos.x < width - 1 && pos.y < height - 1)
+
+    for (const pos of positions) {
+      const tile = this.scene.add.rectangle(
+        pos.x * TILE + TILE / 2,
+        pos.y * TILE + TILE / 2,
+        TILE - 8,
+        TILE - 8,
+        0x22d3ee,
+        0.16,
+      )
+      tile.setStrokeStyle(1, 0x67e8f9, 0.35)
+      tile.setDepth(1)
+      this.portalAuraGroup.add(tile)
+      this.scene.tweens.add({
+        targets: tile,
+        alpha: { from: 0.12, to: 0.24 },
+        duration: 900,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.InOut',
+      })
+    }
   }
 
   private createChestVisual(chest: ChestTile) {

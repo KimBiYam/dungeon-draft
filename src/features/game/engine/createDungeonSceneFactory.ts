@@ -22,6 +22,7 @@ import {
 } from './model'
 import { MonsterRoleService } from './monster'
 import { MonsterTypeCatalog, scaleMonsterStats } from './monsterTypes'
+import { TerrainRoleService } from './terrain'
 import {
   ensureAnimations,
   ensureSpriteSheets,
@@ -48,11 +49,14 @@ export function createDungeonSceneFactory(
     private readonly heroRole = new HeroRoleService(randomInt)
     private readonly monsterRole = new MonsterRoleService(randomInt)
     private readonly monsterCatalog = new MonsterTypeCatalog()
+    private readonly terrainRole = new TerrainRoleService()
     private readonly floorEventRole = new FloorEventService(randomInt)
     private readonly visuals = new DungeonVisualSystem(this)
     private readonly audio = new RetroSfx(
       () => (this.sound as unknown as { context?: AudioContext }).context,
     )
+    private revealedTrapKeys = new Set<string>()
+    private portalResonanceUsed = false
 
     constructor() {
       super('dungeon')
@@ -66,6 +70,9 @@ export function createDungeonSceneFactory(
       this.visuals.createUiOverlay()
       this.bindInput()
       this.visuals.rebuildFloorObjects(this.run)
+      this.revealedTrapKeys.clear()
+      this.portalResonanceUsed = false
+      this.syncTrapRevealVisuals()
       callbacks.onLevelUpChoices(null)
       callbacks.onFloorEventChoices(null)
       callbacks.onLog(
@@ -82,9 +89,12 @@ export function createDungeonSceneFactory(
       this.activeLevelUpChoices = null
       this.activeFloorEventChoices = null
       this.activeFloorEventTile = null
+      this.revealedTrapKeys.clear()
+      this.portalResonanceUsed = false
       callbacks.onLevelUpChoices(null)
       callbacks.onFloorEventChoices(null)
       this.visuals.rebuildFloorObjects(this.run)
+      this.syncTrapRevealVisuals()
       callbacks.onLog(`New ${heroClass} run started.`)
       this.audio.play('newRun')
       this.pushState()
@@ -289,6 +299,7 @@ export function createDungeonSceneFactory(
             const trap = this.run.floorData.traps.splice(trapIdx, 1)[0]
             const damage = this.applyTrapEffect(trap.kind)
             this.visuals.consumeTrapVisual(target)
+            this.revealedTrapKeys.delete(keyOf(target))
             this.run.hp = clamp(this.run.hp - damage, 0, this.run.maxHp)
             this.pushLog(`${this.describeTrap(trap.kind)} trap! -${damage} HP.`)
             this.audio.play('trapTrigger')
@@ -299,6 +310,19 @@ export function createDungeonSceneFactory(
               this.pushState()
               return
             }
+          }
+
+          this.revealNearbyTraps()
+
+          if (
+            !isExit &&
+            !this.portalResonanceUsed &&
+            this.terrainRole.isPortalResonanceTile(target, this.run.floorData.exit)
+          ) {
+            const heal = this.terrainRole.applyPortalResonance(this.run)
+            this.portalResonanceUsed = true
+            this.pushLog(`Portal resonance restores ${heal} HP.`)
+            this.audio.play('pickupPotion')
           }
           if (chestIdx >= 0) {
             const chest = this.run.floorData.chests.splice(chestIdx, 1)[0]
@@ -322,10 +346,13 @@ export function createDungeonSceneFactory(
             this.run.hp = clamp(this.run.hp + 6, 0, this.run.maxHp)
             this.pushLog(`Descended to floor ${this.run.floor}.`)
             this.audio.play('descendFloor')
+            this.revealedTrapKeys.clear()
+            this.portalResonanceUsed = false
             this.activeFloorEventChoices = null
             this.activeFloorEventTile = null
             callbacks.onFloorEventChoices(null)
             this.visuals.rebuildFloorObjects(this.run)
+            this.syncTrapRevealVisuals()
             this.pushState()
             return
           }
@@ -589,6 +616,39 @@ export function createDungeonSceneFactory(
 
     private pushLog(message: string) {
       callbacks.onLog(message)
+    }
+
+    private revealNearbyTraps() {
+      const nearbyKeys = this.terrainRole.getNearbyTrapKeys(
+        this.run.player,
+        this.run.floorData.traps,
+        1,
+      )
+      let newlyRevealed = 0
+      for (const trapKey of nearbyKeys) {
+        if (this.revealedTrapKeys.has(trapKey)) {
+          continue
+        }
+        this.revealedTrapKeys.add(trapKey)
+        const [xText, yText] = trapKey.split(',')
+        const x = Number(xText)
+        const y = Number(yText)
+        if (Number.isFinite(x) && Number.isFinite(y)) {
+          this.visuals.setTrapRevealed({ x, y }, true)
+        }
+        newlyRevealed += 1
+      }
+      if (newlyRevealed > 0) {
+        this.pushLog(
+          newlyRevealed === 1
+            ? 'You sense a hidden trap nearby.'
+            : `You sense ${newlyRevealed} hidden traps nearby.`,
+        )
+      }
+    }
+
+    private syncTrapRevealVisuals() {
+      this.visuals.setRevealedTraps(this.revealedTrapKeys)
     }
   }
 }
