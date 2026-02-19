@@ -4,6 +4,7 @@ import { DungeonVisualSystem } from './dungeonVisualSystem'
 import { FloorEventService, type FloorEventChoice } from './floorEvent'
 import { HeroRoleService, type LevelUpChoice } from './hero'
 import { InputMapper } from './input'
+import { EnemyPhaseResolver } from './enemyPhaseResolver'
 import {
   type FloorEventTile,
   START_POS,
@@ -21,15 +22,13 @@ import {
   type RunState,
 } from './model'
 import { MonsterRoleService } from './monster'
-import { MonsterTypeCatalog, scaleMonsterStats } from './monsterTypes'
+import { MonsterTypeCatalog } from './monsterTypes'
 import { TerrainRoleService } from './terrain'
 import {
   ensureAnimations,
   ensureSpriteSheets,
   getHeroAttackAnimKey,
-  getHeroHurtAnimKey,
   getHeroIdleAnimKey,
-  getMonsterAttackAnimKey,
   getMonsterHurtAnimKey,
   getMonsterIdleAnimKey,
 } from './spriteSheet'
@@ -52,6 +51,12 @@ export function createDungeonSceneFactory(
     private readonly terrainRole = new TerrainRoleService()
     private readonly floorEventRole = new FloorEventService(randomInt)
     private readonly visuals = new DungeonVisualSystem(this)
+    private readonly enemyPhaseResolver = new EnemyPhaseResolver(
+      this.monsterRole,
+      this.monsterCatalog,
+      this.visuals,
+      Math.random,
+    )
     private readonly audio = new RetroSfx(
       () => (this.sound as unknown as { context?: AudioContext }).context,
     )
@@ -376,152 +381,14 @@ export function createDungeonSceneFactory(
     }
 
     private enemyPhase() {
-      const occupied = new Set<string>(this.run.floorData.enemies.map((enemy) => keyOf(enemy.pos)))
-      const actingEnemies = [...this.run.floorData.enemies]
-
-      for (const enemy of actingEnemies) {
-        const distance =
-          Math.abs(enemy.pos.x - this.run.player.x) +
-          Math.abs(enemy.pos.y - this.run.player.y)
-
-        if (distance === 1) {
-          this.playOnceThen(
-            this.visuals.getEnemySprite(enemy.id),
-            getMonsterAttackAnimKey(enemy.monsterTypeId),
-            getMonsterIdleAnimKey(enemy.monsterTypeId),
-          )
-          const dmg = this.monsterRole.calculateAttackDamage(enemy.atk, this.run.def)
-          this.run.hp -= dmg
-          this.pushLog(`${enemy.monsterName} hits for ${dmg}.`)
-          this.audio.play('heroHit')
-          this.hitFlash(this.run.player, 0x38bdf8)
-          this.playOnceThen(
-            this.visuals.getPlayerSprite(),
-            getHeroHurtAnimKey(this.run.heroClass),
-            getHeroIdleAnimKey(this.run.heroClass),
-          )
-          if (this.run.hp <= 0) {
-            this.triggerGameOver(`You died on floor ${this.run.floor}. Press New Run.`)
-            return
-          }
-          continue
-        }
-
-        if (
-          enemy.behavior === 'ranged' &&
-          this.monsterRole.canUseRangedAttack(
-            enemy.pos,
-            this.run.player,
-            (pos) => this.run.floorData.walls.has(keyOf(pos)),
-          )
-        ) {
-          this.playOnceThen(
-            this.visuals.getEnemySprite(enemy.id),
-            getMonsterAttackAnimKey(enemy.monsterTypeId),
-            getMonsterIdleAnimKey(enemy.monsterTypeId),
-          )
-          const dmg = this.monsterRole.calculateAttackDamage(Math.max(1, enemy.atk - 1), this.run.def)
-          this.run.hp -= dmg
-          this.pushLog(`${enemy.monsterName} fires for ${dmg}.`)
-          this.audio.play('heroHit')
-          this.hitFlash(this.run.player, 0x38bdf8)
-          this.playOnceThen(
-            this.visuals.getPlayerSprite(),
-            getHeroHurtAnimKey(this.run.heroClass),
-            getHeroIdleAnimKey(this.run.heroClass),
-          )
-          if (this.run.hp <= 0) {
-            this.triggerGameOver(`You died on floor ${this.run.floor}. Press New Run.`)
-            return
-          }
-          continue
-        }
-
-        if (
-          enemy.behavior === 'summoner' &&
-          this.run.floorData.enemies.length < 14 &&
-          this.monsterRole.shouldSummon(this.run.floor)
-        ) {
-          const summonPos = this.monsterRole.getSummonSpawnPos(enemy.pos, (pos) =>
-            this.canOccupyEnemyTile(pos, occupied),
-          )
-          if (summonPos) {
-            const summoned = this.createSummonedEnemy(summonPos)
-            this.run.floorData.enemies.push(summoned)
-            occupied.add(keyOf(summonPos))
-            this.visuals.addEnemyVisual(summoned)
-            this.pushLog(
-              `${enemy.monsterName} (${this.monsterRole.getBehaviorLabel(enemy.behavior)}) summons a ${summoned.monsterName}.`,
-            )
-            continue
-          }
-        }
-
-        if (Math.random() < 0.3) continue
-
-        const step =
-          enemy.behavior === 'charger'
-            ? this.monsterRole.getChargerStep(enemy.pos, this.run.player)
-            : this.monsterRole.getChaseStep(enemy.pos, this.run.player)
-        const candidate = { x: enemy.pos.x + step.x, y: enemy.pos.y + step.y }
-        if (this.canOccupyEnemyTile(candidate, occupied)) {
-          const from = { ...enemy.pos }
-          occupied.delete(keyOf(from))
-          enemy.pos = candidate
-          occupied.add(keyOf(candidate))
-          this.visuals.moveEnemyVisual(enemy.id, from, candidate)
-          continue
-        }
-
-        if (enemy.behavior === 'charger' && (step.x === 2 || step.x === -2 || step.y === 2 || step.y === -2)) {
-          const fallback = {
-            x: enemy.pos.x + Math.sign(step.x),
-            y: enemy.pos.y + Math.sign(step.y),
-          }
-          if (this.canOccupyEnemyTile(fallback, occupied)) {
-            const from = { ...enemy.pos }
-            occupied.delete(keyOf(from))
-            enemy.pos = fallback
-            occupied.add(keyOf(fallback))
-            this.visuals.moveEnemyVisual(enemy.id, from, fallback)
-          }
-        }
-      }
-    }
-
-    private canOccupyEnemyTile(pos: Pos, occupied: Set<string>) {
-      if (
-        pos.x < 0 ||
-        pos.y < 0 ||
-        pos.x >= this.run.floorData.width ||
-        pos.y >= this.run.floorData.height
-      ) {
-        return false
-      }
-      const key = keyOf(pos)
-      return (
-        !this.run.floorData.walls.has(key) &&
-        !occupied.has(key) &&
-        !samePos(pos, this.run.player) &&
-        !samePos(pos, this.run.floorData.exit)
-      )
-    }
-
-    private createSummonedEnemy(pos: Pos): RunState['floorData']['enemies'][number] {
-      const baseType = this.monsterCatalog.getById('slime')
-      const scaled = scaleMonsterStats(baseType, this.run.floor)
-      const summonIndex = this.run.floorData.enemies.length + 1
-      return {
-        id: this.monsterRole.createSummonedEnemyId(this.run.floor, this.run.turn, summonIndex),
-        pos,
-        hp: Math.max(5, scaled.maxHp - 2),
-        maxHp: Math.max(5, scaled.maxHp - 2),
-        atk: Math.max(1, scaled.atk),
-        behavior: 'normal',
-        monsterTypeId: baseType.id,
-        monsterName: `${baseType.name} Spawn`,
-        monsterTint: baseType.tint,
-      }
+      this.enemyPhaseResolver.execute({
+        run: this.run,
+        playOnceThen: this.playOnceThen.bind(this),
+        pushLog: this.pushLog.bind(this),
+        playAudio: this.audio.play.bind(this.audio),
+        hitFlash: this.hitFlash.bind(this),
+        triggerGameOver: this.triggerGameOver.bind(this),
+      })
     }
 
     private playOnceThen(
