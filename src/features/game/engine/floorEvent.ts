@@ -9,7 +9,7 @@ export type FloorEventChoice = {
 }
 
 type FloorEventOption = FloorEventChoice & {
-  apply: (run: RunState) => string
+  apply: (run: RunState, roll: Roll) => string
 }
 
 const FLOOR_EVENT_OPTIONS: Record<FloorEventKind, FloorEventOption[]> = {
@@ -82,13 +82,27 @@ const FLOOR_EVENT_OPTIONS: Record<FloorEventKind, FloorEventOption[]> = {
       id: 'gamble-dice',
       title: 'Loaded Dice',
       description: '50%: ATK +3, else take 8 damage',
-      apply: () => 'Dice are ready.',
+      apply: (run, roll) => {
+        if (roll(0, 1) === 1) {
+          run.atk += 3
+          return 'Dice favor you. ATK +3.'
+        }
+        run.hp = clamp(run.hp - 8, 0, run.maxHp)
+        return 'Dice betray you. You take 8 damage.'
+      },
     },
     {
       id: 'gamble-cache',
       title: 'Hidden Cache',
       description: '50%: Max HP +6 and heal 6, else no gain',
-      apply: () => 'You search the cache.',
+      apply: (run, roll) => {
+        if (roll(0, 1) === 1) {
+          run.maxHp += 6
+          run.hp = clamp(run.hp + 6, 0, run.maxHp)
+          return 'Cache discovered. Max HP +6 and heal 6.'
+        }
+        return 'The cache was empty.'
+      },
     },
     {
       id: 'gamble-leave',
@@ -116,24 +130,6 @@ export class FloorEventService {
       return null
     }
 
-    if (kind === 'gamble' && (choiceId === 'gamble-dice' || choiceId === 'gamble-cache')) {
-      const winRoll = this.roll(0, 1)
-      if (choiceId === 'gamble-dice') {
-        if (winRoll === 1) {
-          run.atk += 3
-          return 'Dice favor you. ATK +3.'
-        }
-        run.hp = clamp(run.hp - 8, 0, run.maxHp)
-        return 'Dice betray you. You take 8 damage.'
-      }
-      if (winRoll === 1) {
-        run.maxHp += 6
-        run.hp = clamp(run.hp + 6, 0, run.maxHp)
-        return 'Cache discovered. Max HP +6 and heal 6.'
-      }
-      return 'The cache was empty.'
-    }
-
-    return option.apply(run)
+    return option.apply(run, this.roll)
   }
 }
