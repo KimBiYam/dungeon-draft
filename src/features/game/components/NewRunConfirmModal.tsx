@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react'
+
 import { HERO_CLASSES } from '../engine/model'
 import { useRuntimeStore } from '../store/runtimeStore'
 import { useSessionStore } from '../store/sessionStore'
@@ -9,10 +11,18 @@ export function NewRunConfirmModal() {
   const heroClass = useSessionStore((state) => state.heroClass)
   const setHeroClass = useSessionStore((state) => state.setHeroClass)
   const newRun = useRuntimeStore((state) => state.newRun)
+  const [selectedHeroClass, setSelectedHeroClass] = useState(heroClass)
+
+  useEffect(() => {
+    if (open) {
+      setSelectedHeroClass(heroClass)
+    }
+  }, [heroClass, open])
 
   const onConfirm = () => {
+    setHeroClass(selectedHeroClass)
     closeNewRunConfirm()
-    newRun(heroClass)
+    newRun(selectedHeroClass)
   }
 
   if (!open) {
@@ -37,9 +47,9 @@ export function NewRunConfirmModal() {
             <button
               key={entry.id}
               type="button"
-              onClick={() => setHeroClass(entry.id)}
+              onClick={() => setSelectedHeroClass(entry.id)}
               className={`rounded-md border px-3 py-2 text-xs transition ${
-                heroClass === entry.id
+                selectedHeroClass === entry.id
                   ? 'border-cyan-300/70 bg-cyan-500/10 text-cyan-100'
                   : 'border-zinc-600/50 text-zinc-300 hover:border-cyan-300/60 hover:text-cyan-100'
               }`}
