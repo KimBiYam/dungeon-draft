@@ -2,6 +2,7 @@ import type Phaser from 'phaser'
 
 import { DungeonObjectVisualFactory } from './dungeonObjectVisualFactory'
 import { EnemyVisualRegistry } from './enemyVisualRegistry'
+import { FogOfWarRenderer } from './fogOfWarRenderer'
 import {
   MAX_MAP_H,
   MAX_MAP_W,
@@ -38,13 +39,14 @@ export class DungeonVisualSystem {
   private trapVisuals = new Map<string, Phaser.GameObjects.Container>()
   private chestVisuals = new Map<string, Phaser.GameObjects.Container>()
   private eventVisuals = new Map<string, Phaser.GameObjects.Container>()
-  private fogTiles = new Map<string, Phaser.GameObjects.Rectangle>()
   private readonly objectVisualFactory: DungeonObjectVisualFactory
   private readonly enemyVisualRegistry: EnemyVisualRegistry
+  private readonly fogRenderer: FogOfWarRenderer
 
   constructor(private readonly scene: Phaser.Scene) {
     this.objectVisualFactory = new DungeonObjectVisualFactory(scene)
     this.enemyVisualRegistry = new EnemyVisualRegistry(scene)
+    this.fogRenderer = new FogOfWarRenderer(scene, DungeonVisualSystem.VISION_RADIUS)
   }
 
   drawBoard() {
@@ -101,8 +103,7 @@ export class DungeonVisualSystem {
     this.trapVisuals.clear()
     this.chestVisuals.clear()
     this.eventVisuals.clear()
-    this.fogTiles.forEach((tile) => tile.destroy())
-    this.fogTiles.clear()
+    this.fogRenderer.clear()
 
     this.wallGroup = this.scene.add.group()
     this.enemyGroup = this.scene.add.group()
@@ -180,7 +181,7 @@ export class DungeonVisualSystem {
       )
     }
 
-    this.createFogLayer()
+    this.fogRenderer.createLayer()
     this.updatePlayerHpBar(run)
     this.updateVision(run)
   }
@@ -294,20 +295,7 @@ export class DungeonVisualSystem {
   }
 
   updateVision(run: RunState) {
-    const radius = DungeonVisualSystem.VISION_RADIUS
-    const radiusSq = radius * radius
-    for (let y = 0; y < MAX_MAP_H; y++) {
-      for (let x = 0; x < MAX_MAP_W; x++) {
-        const fog = this.fogTiles.get(keyOf({ x, y }))
-        if (!fog) continue
-
-        const dx = x - run.player.x
-        const dy = y - run.player.y
-        const inSight = dx * dx + dy * dy <= radiusSq
-        const inFloor = x >= 0 && y >= 0 && x < run.floorData.width && y < run.floorData.height
-        fog.setAlpha(inSight && inFloor ? 0 : 1)
-      }
-    }
+    this.fogRenderer.update(run)
   }
 
   getPlayerSprite() {
@@ -321,23 +309,6 @@ export class DungeonVisualSystem {
   killPlayerTweens() {
     if (this.playerSprite) {
       this.scene.tweens.killTweensOf(this.playerSprite)
-    }
-  }
-
-  private createFogLayer() {
-    for (let y = 0; y < MAX_MAP_H; y++) {
-      for (let x = 0; x < MAX_MAP_W; x++) {
-        const fog = this.scene.add.rectangle(
-          x * TILE + TILE / 2,
-          y * TILE + TILE / 2,
-          TILE + 1,
-          TILE + 1,
-          0x000000,
-          1,
-        )
-        fog.setDepth(30)
-        this.fogTiles.set(keyOf({ x, y }), fog)
-      }
     }
   }
 }
