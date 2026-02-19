@@ -7,6 +7,7 @@ export type Enemy = {
   hp: number
   maxHp: number
   atk: number
+  behavior: 'normal' | 'charger' | 'ranged' | 'summoner'
   monsterTypeId: string
   monsterName: string
   monsterTint: number
@@ -231,6 +232,7 @@ function createFloorOnce(floor: number): FloorData {
       hp,
       maxHp: hp,
       atk: scaled.atk,
+      behavior: monsterType.behavior,
       monsterTypeId: monsterType.id,
       monsterName: monsterType.name,
       monsterTint: monsterType.tint,

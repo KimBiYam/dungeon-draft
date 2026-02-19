@@ -145,48 +145,7 @@ export class DungeonVisualSystem {
     this.exitOrb = exitOrb
 
     for (const enemy of run.floorData.enemies) {
-      const shadow = this.scene.add.ellipse(
-        enemy.pos.x * TILE + TILE / 2,
-        enemy.pos.y * TILE + TILE / 2 + 12,
-        24,
-        9,
-        0x000000,
-        0.35,
-      )
-      this.enemyGroup.add(shadow)
-
-      const sprite = this.scene.add.sprite(
-        enemy.pos.x * TILE + TILE / 2,
-        enemy.pos.y * TILE + TILE / 2,
-        getMonsterFrame0Key(enemy.monsterTypeId),
-      )
-      sprite.setDisplaySize(30, 30)
-      sprite.play(getMonsterIdleAnimKey(enemy.monsterTypeId))
-      this.enemyGroup.add(sprite)
-
-      const ratio = clamp(enemy.hp / enemy.maxHp, 0.08, 1)
-      const hpBg = this.scene.add.rectangle(
-        enemy.pos.x * TILE + TILE / 2,
-        enemy.pos.y * TILE + TILE / 2 - 19,
-        28,
-        5,
-        0x09090b,
-        0.95,
-      )
-      hpBg.setStrokeStyle(1, 0x52525b, 0.9)
-      const hpFill = this.scene.add.rectangle(
-        enemy.pos.x * TILE + TILE / 2 - 14,
-        enemy.pos.y * TILE + TILE / 2 - 19,
-        28 * ratio,
-        5,
-        0xfb7185,
-        0.95,
-      )
-      hpFill.setOrigin(0, 0.5)
-      this.enemyGroup.add(hpBg)
-      this.enemyGroup.add(hpFill)
-
-      this.enemyVisuals.set(enemy.id, { shadow, sprite, hpBg, hpFill })
+      this.addEnemyVisual(enemy)
     }
 
     if (!this.playerSprite) {
@@ -315,6 +274,52 @@ export class DungeonVisualSystem {
     visual.hpBg.destroy()
     visual.hpFill.destroy()
     this.enemyVisuals.delete(id)
+  }
+
+  addEnemyVisual(enemy: RunState['floorData']['enemies'][number]) {
+    if (!this.enemyGroup) return
+    const shadow = this.scene.add.ellipse(
+      enemy.pos.x * TILE + TILE / 2,
+      enemy.pos.y * TILE + TILE / 2 + 12,
+      24,
+      9,
+      0x000000,
+      0.35,
+    )
+    this.enemyGroup.add(shadow)
+
+    const sprite = this.scene.add.sprite(
+      enemy.pos.x * TILE + TILE / 2,
+      enemy.pos.y * TILE + TILE / 2,
+      getMonsterFrame0Key(enemy.monsterTypeId),
+    )
+    sprite.setDisplaySize(30, 30)
+    sprite.play(getMonsterIdleAnimKey(enemy.monsterTypeId))
+    this.enemyGroup.add(sprite)
+
+    const ratio = clamp(enemy.hp / enemy.maxHp, 0.08, 1)
+    const hpBg = this.scene.add.rectangle(
+      enemy.pos.x * TILE + TILE / 2,
+      enemy.pos.y * TILE + TILE / 2 - 19,
+      28,
+      5,
+      0x09090b,
+      0.95,
+    )
+    hpBg.setStrokeStyle(1, 0x52525b, 0.9)
+    const hpFill = this.scene.add.rectangle(
+      enemy.pos.x * TILE + TILE / 2 - 14,
+      enemy.pos.y * TILE + TILE / 2 - 19,
+      28 * ratio,
+      5,
+      0xfb7185,
+      0.95,
+    )
+    hpFill.setOrigin(0, 0.5)
+    this.enemyGroup.add(hpBg)
+    this.enemyGroup.add(hpFill)
+
+    this.enemyVisuals.set(enemy.id, { shadow, sprite, hpBg, hpFill })
   }
 
   updateEnemyHpBar(run: RunState, id: string) {

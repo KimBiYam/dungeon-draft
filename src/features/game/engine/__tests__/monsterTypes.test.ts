@@ -14,9 +14,11 @@ describe('monster types', () => {
   it('resolves type by id and exposes display metadata', () => {
     const catalog = new MonsterTypeCatalog()
     const slime = catalog.getById('slime')
+    const cultist = catalog.getById('cultist')
 
     expect(slime.name).toBe('Slime')
     expect(slime.tint).toBeTypeOf('number')
+    expect(cultist.behavior).toBe('summoner')
   })
 
   it('scales stats by floor', () => {
