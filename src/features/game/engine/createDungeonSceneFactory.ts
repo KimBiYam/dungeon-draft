@@ -2,8 +2,9 @@ import type { CreateRoguelikeGameOptions } from './contracts'
 import { RetroSfx } from './audio'
 import { DungeonVisualSystem } from './dungeonVisualSystem'
 import { FloorEventService, type FloorEventChoice } from './floorEvent'
-import { HeroRoleService, type LevelUpChoice } from './hero'
+import { HeroRoleService } from './hero'
 import { InputMapper } from './input'
+import { LevelUpFlow } from './levelUpFlow'
 import { EnemyPhaseResolver } from './enemyPhaseResolver'
 import { RunNotifier } from './runNotifier'
 import { RunLifecycleService } from './runLifecycleService'
@@ -33,8 +34,6 @@ export function createDungeonSceneFactory(
   return class DungeonScene extends Phaser.Scene {
     private run: RunState
     private uiInputBlocked = false
-    private pendingLevelUps = 0
-    private activeLevelUpChoices: LevelUpChoice[] | null = null
     private activeFloorEventChoices: FloorEventChoice[] | null = null
     private activeFloorEventTile: FloorEventTile | null = null
     private readonly inputMapper = new InputMapper()
@@ -46,6 +45,14 @@ export function createDungeonSceneFactory(
     private readonly notifier = new RunNotifier(callbacks)
     private readonly floorEventRole = new FloorEventService(randomInt)
     private readonly lootService = new LootService(randomInt)
+    private readonly audio = new RetroSfx(
+      () => (this.sound as unknown as { context?: AudioContext }).context,
+    )
+    private readonly levelUpFlow = new LevelUpFlow(
+      this.heroRole,
+      this.notifier,
+      this.audio.play.bind(this.audio, 'levelUp'),
+    )
     private readonly visuals = new DungeonVisualSystem(this)
     private readonly effects = new SceneEffects(this, Phaser)
     private readonly turnResolver = new TurnResolver(randomInt)
@@ -54,9 +61,6 @@ export function createDungeonSceneFactory(
       this.monsterCatalog,
       this.visuals,
       Math.random,
-    )
-    private readonly audio = new RetroSfx(
-      () => (this.sound as unknown as { context?: AudioContext }).context,
     )
     private portalResonanceUsed = false
 
@@ -85,8 +89,7 @@ export function createDungeonSceneFactory(
     newRun(heroClass: HeroClassId) {
       this.heroRole.resetBuildSynergy()
       this.run = this.runLifecycle.createNewRun(heroClass)
-      this.pendingLevelUps = 0
-      this.activeLevelUpChoices = null
+      this.levelUpFlow.reset()
       this.activeFloorEventChoices = null
       this.activeFloorEventTile = null
       this.portalResonanceUsed = false
@@ -98,30 +101,13 @@ export function createDungeonSceneFactory(
     }
 
     chooseLevelUpReward(choiceId: string) {
-      if (!this.activeLevelUpChoices || this.run.gameOver || this.activeFloorEventChoices) {
+      if (!this.levelUpFlow.hasActiveChoices() || this.activeFloorEventChoices) {
         return
       }
 
-      const log = this.heroRole.applyLevelUpChoice(
-        this.run,
-        choiceId,
-        this.run.heroClass,
-      )
-      if (!log) {
+      if (!this.levelUpFlow.choose(this.run, choiceId, this.run.heroClass)) {
         return
       }
-
-      this.pushLog(log)
-      this.pendingLevelUps = Math.max(0, this.pendingLevelUps - 1)
-      this.audio.play('levelUp')
-
-      if (this.pendingLevelUps > 0) {
-        this.offerLevelUpChoices()
-      } else {
-        this.activeLevelUpChoices = null
-        this.notifier.clearLevelUpChoices()
-      }
-
       this.pushState()
     }
 
@@ -173,9 +159,10 @@ export function createDungeonSceneFactory(
           event.key,
           event.code,
         )
-        if (this.activeLevelUpChoices && levelUpChoiceIndex !== null) {
+        const activeLevelUpChoices = this.levelUpFlow.getActiveChoices()
+        if (activeLevelUpChoices && levelUpChoiceIndex !== null) {
           event.preventDefault()
-          const choice = this.activeLevelUpChoices[levelUpChoiceIndex]
+          const choice = activeLevelUpChoices[levelUpChoiceIndex]
           if (choice) this.chooseLevelUpReward(choice.id)
           return
         }
@@ -190,16 +177,9 @@ export function createDungeonSceneFactory(
         if (!command) return
 
         event.preventDefault()
-        if (this.uiInputBlocked || this.activeLevelUpChoices || this.activeFloorEventChoices) return
+        if (this.uiInputBlocked || activeLevelUpChoices || this.activeFloorEventChoices) return
         this.processTurn(command.move.x, command.move.y)
       })
-    }
-
-    private offerLevelUpChoices() {
-      const choices = this.heroRole.createLevelUpChoices(this.run.heroClass, 3)
-      this.activeLevelUpChoices = choices
-      this.notifier.setLevelUpChoices(choices)
-      this.pushLog('Level up! Choose one card.')
     }
 
     private offerFloorEventChoices(tile: FloorEventTile) {
@@ -210,19 +190,8 @@ export function createDungeonSceneFactory(
       this.pushLog(`${tile.kind.toUpperCase()} event: choose your option.`)
     }
 
-    private processPendingLevelUps() {
-      const gained = this.heroRole.gainPendingLevelUps(this.run)
-      if (gained <= 0) {
-        return false
-      }
-
-      this.pendingLevelUps += gained
-      this.offerLevelUpChoices()
-      return true
-    }
-
     private processTurn(dx: number, dy: number) {
-      if (this.run.gameOver || this.activeLevelUpChoices) return
+      if (this.run.gameOver || this.levelUpFlow.hasActiveChoices()) return
       if (this.activeFloorEventChoices) return
 
       const target = { x: this.run.player.x + dx, y: this.run.player.y + dy }
@@ -319,7 +288,7 @@ export function createDungeonSceneFactory(
         this.pushLog('You hold your stance.')
       }
 
-      if (this.processPendingLevelUps()) {
+      if (this.levelUpFlow.collectPending(this.run)) {
         this.pushState()
         return
       }
@@ -346,10 +315,9 @@ export function createDungeonSceneFactory(
       }
       this.pushLog(message)
       this.notifier.resetTransientUi()
-      this.activeLevelUpChoices = null
+      this.levelUpFlow.clearActiveChoices()
       this.activeFloorEventChoices = null
       this.activeFloorEventTile = null
-      this.pendingLevelUps = 0
       this.audio.play('death')
       this.effects.cameraShake(200)
     }
