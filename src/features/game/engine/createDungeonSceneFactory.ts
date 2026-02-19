@@ -9,11 +9,10 @@ import { RunNotifier } from './runNotifier'
 import { RunLifecycleService } from './runLifecycleService'
 import { SceneEffects } from './sceneEffects'
 import { TurnResolver } from './turnResolver'
+import { LootService } from './lootService'
 import {
   type FloorEventTile,
   type HeroClassId,
-  type TrapKind,
-  clamp,
   keyOf,
   randomInt,
   samePos,
@@ -46,6 +45,7 @@ export function createDungeonSceneFactory(
     private readonly runLifecycle = new RunLifecycleService()
     private readonly notifier = new RunNotifier(callbacks)
     private readonly floorEventRole = new FloorEventService(randomInt)
+    private readonly lootService = new LootService(randomInt)
     private readonly visuals = new DungeonVisualSystem(this)
     private readonly effects = new SceneEffects(this, Phaser)
     private readonly turnResolver = new TurnResolver(randomInt)
@@ -270,8 +270,8 @@ export function createDungeonSceneFactory(
             triggerTrapFlash: this.effects.trapHitFlash.bind(this.effects),
             cameraShake: this.effects.cameraShake.bind(this.effects),
             visuals: this.visuals,
-            applyTrapEffect: this.applyTrapEffect.bind(this),
-            applyChestReward: this.applyChestReward.bind(this),
+            applyTrapEffect: this.lootService.applyTrapEffect.bind(this.lootService),
+            applyChestReward: this.lootService.applyChestReward.bind(this.lootService, this.run),
             portalResonanceUsed: this.portalResonanceUsed,
           })
           this.portalResonanceUsed = tileEffects.portalResonanceUsed
@@ -338,33 +338,6 @@ export function createDungeonSceneFactory(
         hitFlash: this.effects.hitFlash.bind(this.effects),
         triggerGameOver: this.triggerGameOver.bind(this),
       })
-    }
-
-    private applyTrapEffect(kind: TrapKind) {
-      if (kind === 'spike') return randomInt(4, 8)
-      if (kind === 'flame') return randomInt(6, 10)
-      return randomInt(3, 7)
-    }
-
-    private applyChestReward(rarity: 'common' | 'rare') {
-      if (rarity === 'rare') {
-        if (randomInt(0, 1) === 0) {
-          this.run.atk += 2
-          return 'Rare chest! ATK +2.'
-        }
-        this.run.def += 2
-        return 'Rare chest! DEF +2.'
-      }
-
-      if (this.run.hp < this.run.maxHp && randomInt(0, 1) === 0) {
-        const heal = randomInt(5, 10)
-        this.run.hp = clamp(this.run.hp + heal, 0, this.run.maxHp)
-        return `Chest loot! +${heal} HP.`
-      }
-
-      const xp = randomInt(6, 12)
-      this.run.xp += xp
-      return `Chest loot! +${xp} XP.`
     }
 
     private triggerGameOver(message: string) {
