@@ -5,6 +5,7 @@ import { FloorEventService, type FloorEventChoice } from './floorEvent'
 import { HeroRoleService, type LevelUpChoice } from './hero'
 import { InputMapper } from './input'
 import { EnemyPhaseResolver } from './enemyPhaseResolver'
+import { TurnResolver } from './turnResolver'
 import {
   type FloorEventTile,
   START_POS,
@@ -27,10 +28,6 @@ import { TerrainRoleService } from './terrain'
 import {
   ensureAnimations,
   ensureSpriteSheets,
-  getHeroAttackAnimKey,
-  getHeroIdleAnimKey,
-  getMonsterHurtAnimKey,
-  getMonsterIdleAnimKey,
 } from './spriteSheet'
 
 export function createDungeonSceneFactory(
@@ -51,6 +48,7 @@ export function createDungeonSceneFactory(
     private readonly terrainRole = new TerrainRoleService()
     private readonly floorEventRole = new FloorEventService(randomInt)
     private readonly visuals = new DungeonVisualSystem(this)
+    private readonly turnResolver = new TurnResolver(randomInt)
     private readonly enemyPhaseResolver = new EnemyPhaseResolver(
       this.monsterRole,
       this.monsterCatalog,
@@ -247,86 +245,41 @@ export function createDungeonSceneFactory(
           return
         }
 
-        const enemy = this.run.floorData.enemies.find((e) => samePos(e.pos, target))
-        if (enemy) {
-          const dmg = this.heroRole.calculateAttackDamage(this.run.atk)
-          this.playOnceThen(
-            this.visuals.getPlayerSprite(),
-            getHeroAttackAnimKey(this.run.heroClass),
-            getHeroIdleAnimKey(this.run.heroClass),
-          )
-          this.audio.play('heroAttack')
-          enemy.hp -= dmg
-          this.pushLog(`You slash for ${dmg}.`)
-          this.hitFlash(target, 0xfb7185)
-          this.playOnceThen(
-            this.visuals.getEnemySprite(enemy.id),
-            getMonsterHurtAnimKey(enemy.monsterTypeId),
-            getMonsterIdleAnimKey(enemy.monsterTypeId),
-          )
-          if (enemy.hp <= 0) {
-            this.run.floorData.enemies = this.run.floorData.enemies.filter(
-              (e) => e.id !== enemy.id,
-            )
-            const xp = randomInt(5, 8) + this.run.floor
-            this.run.xp += xp
-            this.pushLog(`${enemy.monsterName} down. +${xp} XP.`)
-            this.audio.play('enemyDefeat')
-            this.cameraShake(120)
-            this.visuals.destroyEnemyVisual(enemy.id)
-          } else {
-            this.audio.play('enemyHit')
-            this.visuals.updateEnemyHpBar(this.run, enemy.id)
-          }
-        } else {
+        const enemyCollision = this.turnResolver.resolveEnemyCollision({
+          run: this.run,
+          target,
+          heroRole: this.heroRole,
+          visuals: this.visuals,
+          playOnceThen: this.playOnceThen.bind(this),
+          playAudio: this.audio.play.bind(this.audio),
+          pushLog: this.pushLog.bind(this),
+          hitFlash: this.hitFlash.bind(this),
+          cameraShake: this.cameraShake.bind(this),
+        })
+        if (!enemyCollision.handled) {
           this.run.player = target
           const isExit = samePos(target, this.run.floorData.exit)
-          const potionIdx = this.run.floorData.potions.findIndex((p) => samePos(p, target))
-          const trapIdx = this.run.floorData.traps.findIndex((t) => samePos(t.pos, target))
-          const chestIdx = this.run.floorData.chests.findIndex((c) => samePos(c.pos, target))
           const eventIdx = this.run.floorData.events.findIndex((tile) =>
             samePos(tile.pos, target),
           )
-          if (potionIdx >= 0) {
-            this.run.floorData.potions.splice(potionIdx, 1)
-            const heal = randomInt(7, 12)
-            this.run.hp = clamp(this.run.hp + heal, 0, this.run.maxHp)
-            this.pushLog(`Potion! +${heal} HP.`)
-            this.audio.play('pickupPotion')
-            this.visuals.consumePotionVisual(target)
-          }
-          if (trapIdx >= 0) {
-            const trap = this.run.floorData.traps.splice(trapIdx, 1)[0]
-            const damage = this.applyTrapEffect(trap.kind)
-            this.visuals.consumeTrapVisual(target)
-            this.run.hp = clamp(this.run.hp - damage, 0, this.run.maxHp)
-            this.pushLog(`${this.describeTrap(trap.kind)} trap! -${damage} HP.`)
-            this.audio.play('trapTrigger')
-            this.trapHitFlash()
-            this.cameraShake(110)
-            if (this.run.hp <= 0) {
-              this.triggerGameOver(`You were slain by a trap on floor ${this.run.floor}.`)
-              this.pushState()
-              return
-            }
-          }
-
-          if (
-            !isExit &&
-            !this.portalResonanceUsed &&
-            this.terrainRole.isPortalResonanceTile(target, this.run.floorData.exit)
-          ) {
-            const heal = this.terrainRole.applyPortalResonance(this.run)
-            this.portalResonanceUsed = true
-            this.pushLog(`Portal resonance restores ${heal} HP.`)
-            this.audio.play('pickupPotion')
-          }
-          if (chestIdx >= 0) {
-            const chest = this.run.floorData.chests.splice(chestIdx, 1)[0]
-            this.visuals.consumeChestVisual(target)
-            const rewardLog = this.applyChestReward(chest.rarity)
-            this.pushLog(rewardLog)
-            this.audio.play('chestOpen')
+          const tileEffects = this.turnResolver.resolveTileEffects({
+            run: this.run,
+            target,
+            terrainRole: this.terrainRole,
+            playAudio: this.audio.play.bind(this.audio),
+            pushLog: this.pushLog.bind(this),
+            triggerTrapFlash: this.trapHitFlash.bind(this),
+            cameraShake: this.cameraShake.bind(this),
+            visuals: this.visuals,
+            applyTrapEffect: this.applyTrapEffect.bind(this),
+            applyChestReward: this.applyChestReward.bind(this),
+            portalResonanceUsed: this.portalResonanceUsed,
+          })
+          this.portalResonanceUsed = tileEffects.portalResonanceUsed
+          if (tileEffects.diedByTrap) {
+            this.triggerGameOver(`You were slain by a trap on floor ${this.run.floor}.`)
+            this.pushState()
+            return
           }
           if (eventIdx >= 0) {
             const tile = this.run.floorData.events[eventIdx]
@@ -425,12 +378,6 @@ export function createDungeonSceneFactory(
         duration: 180,
         onComplete: () => flash.destroy(),
       })
-    }
-
-    private describeTrap(kind: TrapKind) {
-      if (kind === 'spike') return 'Spike'
-      if (kind === 'flame') return 'Flame'
-      return 'Venom'
     }
 
     private applyTrapEffect(kind: TrapKind) {
