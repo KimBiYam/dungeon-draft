@@ -6,10 +6,10 @@ import { HeroRoleService, type LevelUpChoice } from './hero'
 import { InputMapper } from './input'
 import { EnemyPhaseResolver } from './enemyPhaseResolver'
 import { RunLifecycleService } from './runLifecycleService'
+import { SceneEffects } from './sceneEffects'
 import { TurnResolver } from './turnResolver'
 import {
   type FloorEventTile,
-  TILE,
   type HeroClassId,
   type TrapKind,
   clamp,
@@ -17,7 +17,6 @@ import {
   randomInt,
   samePos,
   toHud,
-  type Pos,
   type RunState,
 } from './model'
 import { MonsterRoleService } from './monster'
@@ -47,6 +46,7 @@ export function createDungeonSceneFactory(
     private readonly runLifecycle = new RunLifecycleService()
     private readonly floorEventRole = new FloorEventService(randomInt)
     private readonly visuals = new DungeonVisualSystem(this)
+    private readonly effects = new SceneEffects(this, Phaser)
     private readonly turnResolver = new TurnResolver(randomInt)
     private readonly enemyPhaseResolver = new EnemyPhaseResolver(
       this.monsterRole,
@@ -241,7 +241,7 @@ export function createDungeonSceneFactory(
         if (this.run.floorData.walls.has(keyOf(target))) {
           this.pushLog('Blocked by stone wall.')
           this.audio.play('wallBlocked')
-          this.cameraShake(90)
+          this.effects.cameraShake(90)
           return
         }
 
@@ -250,11 +250,11 @@ export function createDungeonSceneFactory(
           target,
           heroRole: this.heroRole,
           visuals: this.visuals,
-          playOnceThen: this.playOnceThen.bind(this),
+          playOnceThen: this.effects.playOnceThen.bind(this.effects),
           playAudio: this.audio.play.bind(this.audio),
           pushLog: this.pushLog.bind(this),
-          hitFlash: this.hitFlash.bind(this),
-          cameraShake: this.cameraShake.bind(this),
+          hitFlash: this.effects.hitFlash.bind(this.effects),
+          cameraShake: this.effects.cameraShake.bind(this.effects),
         })
         if (!enemyCollision.handled) {
           this.run.player = target
@@ -268,8 +268,8 @@ export function createDungeonSceneFactory(
             terrainRole: this.terrainRole,
             playAudio: this.audio.play.bind(this.audio),
             pushLog: this.pushLog.bind(this),
-            triggerTrapFlash: this.trapHitFlash.bind(this),
-            cameraShake: this.cameraShake.bind(this),
+            triggerTrapFlash: this.effects.trapHitFlash.bind(this.effects),
+            cameraShake: this.effects.cameraShake.bind(this.effects),
             visuals: this.visuals,
             applyTrapEffect: this.applyTrapEffect.bind(this),
             applyChestReward: this.applyChestReward.bind(this),
@@ -333,47 +333,11 @@ export function createDungeonSceneFactory(
     private enemyPhase() {
       this.enemyPhaseResolver.execute({
         run: this.run,
-        playOnceThen: this.playOnceThen.bind(this),
+        playOnceThen: this.effects.playOnceThen.bind(this.effects),
         pushLog: this.pushLog.bind(this),
         playAudio: this.audio.play.bind(this.audio),
-        hitFlash: this.hitFlash.bind(this),
+        hitFlash: this.effects.hitFlash.bind(this.effects),
         triggerGameOver: this.triggerGameOver.bind(this),
-      })
-    }
-
-    private playOnceThen(
-      sprite: Phaser.GameObjects.Sprite | undefined,
-      anim: string,
-      fallback: string,
-    ) {
-      if (!sprite) return
-      sprite.play(anim, true)
-      sprite.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
-        if (sprite.active) sprite.play(fallback, true)
-      })
-    }
-
-    private cameraShake(duration: number) {
-      this.cameras.main.shake(duration, 0.004)
-    }
-
-    private trapHitFlash() {
-      this.cameras.main.flash(140, 220, 38, 38, true)
-    }
-
-    private hitFlash(pos: Pos, color: number) {
-      const flash = this.add.circle(
-        pos.x * TILE + TILE / 2,
-        pos.y * TILE + TILE / 2,
-        16,
-        color,
-        0.6,
-      )
-      this.tweens.add({
-        targets: flash,
-        alpha: 0,
-        duration: 180,
-        onComplete: () => flash.destroy(),
       })
     }
 
@@ -416,7 +380,7 @@ export function createDungeonSceneFactory(
       this.activeFloorEventTile = null
       this.pendingLevelUps = 0
       this.audio.play('death')
-      this.cameraShake(200)
+      this.effects.cameraShake(200)
     }
 
     private pushState() {
