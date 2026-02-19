@@ -1,6 +1,7 @@
 import type Phaser from 'phaser'
 
 import { DungeonObjectVisualFactory } from './dungeonObjectVisualFactory'
+import { EnemyVisualRegistry } from './enemyVisualRegistry'
 import {
   MAX_MAP_H,
   MAX_MAP_W,
@@ -14,16 +15,7 @@ import {
   getHeroFrame0Key,
   getHeroIdleAnimKey,
   getHeroWalkAnimKey,
-  getMonsterFrame0Key,
-  getMonsterIdleAnimKey,
 } from './spriteSheet'
-
-type EnemyVisual = {
-  shadow: Phaser.GameObjects.Ellipse
-  sprite: Phaser.GameObjects.Sprite
-  hpBg: Phaser.GameObjects.Rectangle
-  hpFill: Phaser.GameObjects.Rectangle
-}
 
 export class DungeonVisualSystem {
   private static readonly VISION_RADIUS = 3
@@ -42,16 +34,17 @@ export class DungeonVisualSystem {
   private eventGroup?: Phaser.GameObjects.Group
   private portalAuraGroup?: Phaser.GameObjects.Group
   private exitOrb?: Phaser.GameObjects.Container
-  private enemyVisuals = new Map<string, EnemyVisual>()
   private potionVisuals = new Map<string, Phaser.GameObjects.Container>()
   private trapVisuals = new Map<string, Phaser.GameObjects.Container>()
   private chestVisuals = new Map<string, Phaser.GameObjects.Container>()
   private eventVisuals = new Map<string, Phaser.GameObjects.Container>()
   private fogTiles = new Map<string, Phaser.GameObjects.Rectangle>()
   private readonly objectVisualFactory: DungeonObjectVisualFactory
+  private readonly enemyVisualRegistry: EnemyVisualRegistry
 
   constructor(private readonly scene: Phaser.Scene) {
     this.objectVisualFactory = new DungeonObjectVisualFactory(scene)
+    this.enemyVisualRegistry = new EnemyVisualRegistry(scene)
   }
 
   drawBoard() {
@@ -103,7 +96,7 @@ export class DungeonVisualSystem {
       this.exitOrb.destroy()
       this.exitOrb = undefined
     }
-    this.enemyVisuals.clear()
+    this.enemyVisualRegistry.clear()
     this.potionVisuals.clear()
     this.trapVisuals.clear()
     this.chestVisuals.clear()
@@ -113,6 +106,7 @@ export class DungeonVisualSystem {
 
     this.wallGroup = this.scene.add.group()
     this.enemyGroup = this.scene.add.group()
+    this.enemyVisualRegistry.setGroup(this.enemyGroup)
     this.potionGroup = this.scene.add.group()
     this.trapGroup = this.scene.add.group()
     this.chestGroup = this.scene.add.group()
@@ -248,115 +242,19 @@ export class DungeonVisualSystem {
   }
 
   moveEnemyVisual(id: string, from: Pos, to: Pos) {
-    const visual = this.enemyVisuals.get(id)
-    if (!visual) return
-    this.scene.tweens.killTweensOf(visual.shadow)
-    this.scene.tweens.killTweensOf(visual.sprite)
-    this.scene.tweens.killTweensOf(visual.hpBg)
-    this.scene.tweens.killTweensOf(visual.hpFill)
-
-    const fromX = from.x * TILE + TILE / 2
-    const fromY = from.y * TILE + TILE / 2
-    const toX = to.x * TILE + TILE / 2
-    const toY = to.y * TILE + TILE / 2
-
-    visual.shadow.setPosition(fromX, fromY + 12)
-    visual.sprite.setPosition(fromX, fromY)
-    visual.hpBg.setPosition(fromX, fromY - 19)
-    visual.hpFill.setPosition(fromX - 14, fromY - 19)
-
-    this.scene.tweens.add({
-      targets: visual.shadow,
-      x: toX,
-      y: toY + 12,
-      duration: 100,
-      ease: 'Quad.Out',
-    })
-    this.scene.tweens.add({
-      targets: visual.sprite,
-      x: toX,
-      y: toY,
-      duration: 100,
-      ease: 'Quad.Out',
-    })
-    this.scene.tweens.add({
-      targets: visual.hpBg,
-      x: toX,
-      y: toY - 19,
-      duration: 100,
-      ease: 'Quad.Out',
-    })
-    this.scene.tweens.add({
-      targets: visual.hpFill,
-      x: toX - 14,
-      y: toY - 19,
-      duration: 100,
-      ease: 'Quad.Out',
-    })
+    this.enemyVisualRegistry.move(id, from, to)
   }
 
   destroyEnemyVisual(id: string) {
-    const visual = this.enemyVisuals.get(id)
-    if (!visual) return
-    visual.shadow.destroy()
-    visual.sprite.destroy()
-    visual.hpBg.destroy()
-    visual.hpFill.destroy()
-    this.enemyVisuals.delete(id)
+    this.enemyVisualRegistry.destroy(id)
   }
 
   addEnemyVisual(enemy: RunState['floorData']['enemies'][number]) {
-    if (!this.enemyGroup) return
-    const shadow = this.scene.add.ellipse(
-      enemy.pos.x * TILE + TILE / 2,
-      enemy.pos.y * TILE + TILE / 2 + 12,
-      24,
-      9,
-      0x000000,
-      0.35,
-    )
-    this.enemyGroup.add(shadow)
-
-    const sprite = this.scene.add.sprite(
-      enemy.pos.x * TILE + TILE / 2,
-      enemy.pos.y * TILE + TILE / 2,
-      getMonsterFrame0Key(enemy.monsterTypeId),
-    )
-    sprite.setDisplaySize(30, 30)
-    sprite.play(getMonsterIdleAnimKey(enemy.monsterTypeId))
-    this.enemyGroup.add(sprite)
-
-    const ratio = clamp(enemy.hp / enemy.maxHp, 0.08, 1)
-    const hpBg = this.scene.add.rectangle(
-      enemy.pos.x * TILE + TILE / 2,
-      enemy.pos.y * TILE + TILE / 2 - 19,
-      28,
-      5,
-      0x09090b,
-      0.95,
-    )
-    hpBg.setStrokeStyle(1, 0x52525b, 0.9)
-    const hpFill = this.scene.add.rectangle(
-      enemy.pos.x * TILE + TILE / 2 - 14,
-      enemy.pos.y * TILE + TILE / 2 - 19,
-      28 * ratio,
-      5,
-      0xfb7185,
-      0.95,
-    )
-    hpFill.setOrigin(0, 0.5)
-    this.enemyGroup.add(hpBg)
-    this.enemyGroup.add(hpFill)
-
-    this.enemyVisuals.set(enemy.id, { shadow, sprite, hpBg, hpFill })
+    this.enemyVisualRegistry.add(enemy)
   }
 
   updateEnemyHpBar(run: RunState, id: string) {
-    const enemy = run.floorData.enemies.find((item) => item.id === id)
-    const visual = this.enemyVisuals.get(id)
-    if (!enemy || !visual) return
-    const ratio = clamp(enemy.hp / enemy.maxHp, 0.08, 1)
-    visual.hpFill.setDisplaySize(28 * ratio, 5)
+    this.enemyVisualRegistry.updateHp(run, id)
   }
 
   updatePlayerHpBar(run: RunState) {
@@ -417,7 +315,7 @@ export class DungeonVisualSystem {
   }
 
   getEnemySprite(id: string) {
-    return this.enemyVisuals.get(id)?.sprite
+    return this.enemyVisualRegistry.getSprite(id)
   }
 
   killPlayerTweens() {
