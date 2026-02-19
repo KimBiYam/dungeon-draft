@@ -71,6 +71,38 @@ describe('hero role logic', () => {
     expect(picks.some((pick) => pick.id.startsWith('berserker-'))).toBe(true)
   })
 
+  it('builds level-up choices with class-common split', () => {
+    const heroRole = new HeroRoleService(() => 0)
+    const picks = heroRole.createLevelUpChoices('knight', 3)
+
+    expect(picks).toHaveLength(3)
+    expect(picks.filter((pick) => pick.id.startsWith('knight-'))).toHaveLength(2)
+    expect(picks.filter((pick) => !pick.id.startsWith('knight-'))).toHaveLength(1)
+  })
+
+  it('biases future choices toward previously selected tags', () => {
+    const run = createRun()
+    const heroRole = new HeroRoleService(() => 2)
+
+    heroRole.applyLevelUpChoice(run, 'power-strike', 'knight')
+    const picks = heroRole.createLevelUpChoices('knight', 2)
+    const commonPick = picks.find((pick) => !pick.id.startsWith('knight-'))
+
+    expect(commonPick?.id).toBe('power-strike')
+  })
+
+  it('resets build synergy on new run', () => {
+    const run = createRun()
+    const heroRole = new HeroRoleService(() => 2)
+
+    heroRole.applyLevelUpChoice(run, 'power-strike', 'knight')
+    heroRole.resetBuildSynergy()
+    const picks = heroRole.createLevelUpChoices('knight', 2)
+    const commonPick = picks.find((pick) => !pick.id.startsWith('knight-'))
+
+    expect(commonPick?.id).toBe('iron-hide')
+  })
+
   it('applies selected level-up reward to run', () => {
     const run = createRun({ atk: 7 })
     const heroRole = new HeroRoleService(() => 0)

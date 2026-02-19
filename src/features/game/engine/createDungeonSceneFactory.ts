@@ -52,6 +52,7 @@ export function createDungeonSceneFactory(
     }
 
     create() {
+      this.heroRole.resetBuildSynergy()
       ensureSpriteSheets(this)
       ensureAnimations(this)
       this.visuals.drawBoard()
@@ -67,6 +68,7 @@ export function createDungeonSceneFactory(
     }
 
     newRun(heroClass: HeroClassId) {
+      this.heroRole.resetBuildSynergy()
       this.run = createInitialRun(heroClass)
       this.pendingLevelUps = 0
       this.activeLevelUpChoices = null
