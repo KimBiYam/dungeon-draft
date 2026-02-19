@@ -1,4 +1,5 @@
 import type {
+  FloorEventChoice,
   HeroClassId,
   HudState,
   LevelUpChoice,
@@ -24,11 +25,13 @@ export type SessionStoreState = {
   hud: HudState
   logs: string[]
   levelUpChoices: LevelUpChoice[] | null
+  floorEventChoices: FloorEventChoice[] | null
   setHud: (state: HudState) => void
   setHeroClass: (heroClass: HeroClassId) => void
   pushLog: (line: string) => void
   resetSessionState: () => void
   setLevelUpChoices: (choices: LevelUpChoice[] | null) => void
+  setFloorEventChoices: (choices: FloorEventChoice[] | null) => void
 }
 
 export type AudioStoreState = {
@@ -58,4 +61,5 @@ export type RuntimeStoreState = {
   setApi: (api: RoguelikeGameApi | null) => void
   newRun: (heroClass: HeroClassId) => void
   pickLevelUpChoice: (choiceId: string) => void
+  pickFloorEventChoice: (choiceId: string) => void
 }

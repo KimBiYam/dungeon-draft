@@ -1,9 +1,11 @@
 import type { CreateRoguelikeGameOptions } from './contracts'
 import { RetroSfx } from './audio'
 import { DungeonVisualSystem } from './dungeonVisualSystem'
+import { FloorEventService, type FloorEventChoice } from './floorEvent'
 import { HeroRoleService, type LevelUpChoice } from './hero'
 import { InputMapper } from './input'
 import {
+  type FloorEventTile,
   START_POS,
   TILE,
   type HeroClassId,
@@ -39,9 +41,12 @@ export function createDungeonSceneFactory(
     private uiInputBlocked = false
     private pendingLevelUps = 0
     private activeLevelUpChoices: LevelUpChoice[] | null = null
+    private activeFloorEventChoices: FloorEventChoice[] | null = null
+    private activeFloorEventTile: FloorEventTile | null = null
     private readonly inputMapper = new InputMapper()
     private readonly heroRole = new HeroRoleService(randomInt)
     private readonly monsterRole = new MonsterRoleService(randomInt)
+    private readonly floorEventRole = new FloorEventService(randomInt)
     private readonly visuals = new DungeonVisualSystem(this)
     private readonly audio = new RetroSfx(
       () => (this.sound as unknown as { context?: AudioContext }).context,
@@ -60,6 +65,7 @@ export function createDungeonSceneFactory(
       this.bindInput()
       this.visuals.rebuildFloorObjects(this.run)
       callbacks.onLevelUpChoices(null)
+      callbacks.onFloorEventChoices(null)
       callbacks.onLog(
         `${this.run.heroClass} run started. Reach the portal to descend.`,
       )
@@ -72,7 +78,10 @@ export function createDungeonSceneFactory(
       this.run = createInitialRun(heroClass)
       this.pendingLevelUps = 0
       this.activeLevelUpChoices = null
+      this.activeFloorEventChoices = null
+      this.activeFloorEventTile = null
       callbacks.onLevelUpChoices(null)
+      callbacks.onFloorEventChoices(null)
       this.visuals.rebuildFloorObjects(this.run)
       callbacks.onLog(`New ${heroClass} run started.`)
       this.audio.play('newRun')
@@ -80,7 +89,7 @@ export function createDungeonSceneFactory(
     }
 
     chooseLevelUpReward(choiceId: string) {
-      if (!this.activeLevelUpChoices || this.run.gameOver) {
+      if (!this.activeLevelUpChoices || this.run.gameOver || this.activeFloorEventChoices) {
         return
       }
 
@@ -104,6 +113,34 @@ export function createDungeonSceneFactory(
         callbacks.onLevelUpChoices(null)
       }
 
+      this.pushState()
+    }
+
+    chooseFloorEventOption(choiceId: string) {
+      if (!this.activeFloorEventTile || !this.activeFloorEventChoices || this.run.gameOver) {
+        return
+      }
+
+      const log = this.floorEventRole.applyChoice(
+        this.run,
+        this.activeFloorEventTile.kind,
+        choiceId,
+      )
+      if (!log) {
+        return
+      }
+
+      this.run.floorData.events = this.run.floorData.events.filter(
+        (tile) => tile.id !== this.activeFloorEventTile?.id,
+      )
+      this.visuals.consumeEventVisual(this.activeFloorEventTile.pos)
+      this.activeFloorEventTile = null
+      this.activeFloorEventChoices = null
+      callbacks.onFloorEventChoices(null)
+      this.pushLog(log)
+      if (this.run.hp <= 0) {
+        this.triggerGameOver(`You fell during a floor event on floor ${this.run.floor}.`)
+      }
       this.pushState()
     }
 
@@ -133,12 +170,18 @@ export function createDungeonSceneFactory(
           if (choice) this.chooseLevelUpReward(choice.id)
           return
         }
+        if (this.activeFloorEventChoices && levelUpChoiceIndex !== null) {
+          event.preventDefault()
+          const choice = this.activeFloorEventChoices[levelUpChoiceIndex]
+          if (choice) this.chooseFloorEventOption(choice.id)
+          return
+        }
 
         const command = this.inputMapper.resolveCommand(event.key)
         if (!command) return
 
         event.preventDefault()
-        if (this.uiInputBlocked || this.activeLevelUpChoices) return
+        if (this.uiInputBlocked || this.activeLevelUpChoices || this.activeFloorEventChoices) return
         this.processTurn(command.move.x, command.move.y)
       })
     }
@@ -148,6 +191,14 @@ export function createDungeonSceneFactory(
       this.activeLevelUpChoices = choices
       callbacks.onLevelUpChoices(choices)
       this.pushLog('Level up! Choose one card.')
+    }
+
+    private offerFloorEventChoices(tile: FloorEventTile) {
+      const choices = this.floorEventRole.createChoices(tile.kind)
+      this.activeFloorEventTile = tile
+      this.activeFloorEventChoices = choices
+      callbacks.onFloorEventChoices(choices)
+      this.pushLog(`${tile.kind.toUpperCase()} event: choose your option.`)
     }
 
     private processPendingLevelUps() {
@@ -163,6 +214,7 @@ export function createDungeonSceneFactory(
 
     private processTurn(dx: number, dy: number) {
       if (this.run.gameOver || this.activeLevelUpChoices) return
+      if (this.activeFloorEventChoices) return
 
       const target = { x: this.run.player.x + dx, y: this.run.player.y + dy }
       const moving = dx !== 0 || dy !== 0
@@ -220,6 +272,9 @@ export function createDungeonSceneFactory(
           const potionIdx = this.run.floorData.potions.findIndex((p) => samePos(p, target))
           const trapIdx = this.run.floorData.traps.findIndex((t) => samePos(t.pos, target))
           const chestIdx = this.run.floorData.chests.findIndex((c) => samePos(c.pos, target))
+          const eventIdx = this.run.floorData.events.findIndex((tile) =>
+            samePos(tile.pos, target),
+          )
           if (potionIdx >= 0) {
             this.run.floorData.potions.splice(potionIdx, 1)
             const heal = randomInt(7, 12)
@@ -250,6 +305,12 @@ export function createDungeonSceneFactory(
             this.pushLog(rewardLog)
             this.audio.play('chestOpen')
           }
+          if (eventIdx >= 0) {
+            const tile = this.run.floorData.events[eventIdx]
+            this.offerFloorEventChoices(tile)
+            this.pushState()
+            return
+          }
 
           if (isExit) {
             this.visuals.killPlayerTweens()
@@ -259,6 +320,9 @@ export function createDungeonSceneFactory(
             this.run.hp = clamp(this.run.hp + 6, 0, this.run.maxHp)
             this.pushLog(`Descended to floor ${this.run.floor}.`)
             this.audio.play('descendFloor')
+            this.activeFloorEventChoices = null
+            this.activeFloorEventTile = null
+            callbacks.onFloorEventChoices(null)
             this.visuals.rebuildFloorObjects(this.run)
             this.pushState()
             return
@@ -409,7 +473,10 @@ export function createDungeonSceneFactory(
       this.run.gameOver = true
       this.pushLog(message)
       callbacks.onLevelUpChoices(null)
+      callbacks.onFloorEventChoices(null)
       this.activeLevelUpChoices = null
+      this.activeFloorEventChoices = null
+      this.activeFloorEventTile = null
       this.pendingLevelUps = 0
       this.audio.play('death')
       this.cameraShake(200)

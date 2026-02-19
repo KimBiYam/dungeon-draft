@@ -19,4 +19,7 @@ export const useRuntimeStore = create<RuntimeStoreState>((set, get) => ({
   pickLevelUpChoice: (choiceId) => {
     get().api?.chooseLevelUpReward(choiceId)
   },
+  pickFloorEventChoice: (choiceId) => {
+    get().api?.chooseFloorEventOption(choiceId)
+  },
 }))

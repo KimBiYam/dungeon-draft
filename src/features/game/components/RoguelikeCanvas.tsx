@@ -17,6 +17,7 @@ export default function RoguelikeCanvas({ enabled }: RoguelikeCanvasProps) {
   const setHud = useSessionStore((state) => state.setHud)
   const pushLog = useSessionStore((state) => state.pushLog)
   const setLevelUpChoices = useSessionStore((state) => state.setLevelUpChoices)
+  const setFloorEventChoices = useSessionStore((state) => state.setFloorEventChoices)
   const setApi = useRuntimeStore((state) => state.setApi)
 
   useEffect(() => {
@@ -34,6 +35,7 @@ export default function RoguelikeCanvas({ enabled }: RoguelikeCanvasProps) {
       onState: setHud,
       onLog: pushLog,
       onLevelUpChoices: setLevelUpChoices,
+      onFloorEventChoices: setFloorEventChoices,
     })
       .then((instance) => {
         if (disposed) {
@@ -51,7 +53,15 @@ export default function RoguelikeCanvas({ enabled }: RoguelikeCanvasProps) {
       disposed = true
       setApi(null)
     }
-  }, [enabled, heroClass, pushLog, setApi, setHud, setLevelUpChoices])
+  }, [
+    enabled,
+    heroClass,
+    pushLog,
+    setApi,
+    setFloorEventChoices,
+    setHud,
+    setLevelUpChoices,
+  ])
 
   return (
     <div className="relative overflow-hidden rounded-xl border border-zinc-700 bg-black">

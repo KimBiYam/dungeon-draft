@@ -21,6 +21,12 @@ export type ChestTile = {
   pos: Pos
   rarity: ChestRarity
 }
+export type FloorEventKind = 'shop' | 'altar' | 'gamble'
+export type FloorEventTile = {
+  id: string
+  pos: Pos
+  kind: FloorEventKind
+}
 export type FloorData = {
   width: number
   height: number
@@ -29,6 +35,7 @@ export type FloorData = {
   potions: Pos[]
   traps: TrapTile[]
   chests: ChestTile[]
+  events: FloorEventTile[]
   exit: Pos
 }
 export type RunState = {
@@ -245,9 +252,17 @@ function createFloorOnce(floor: number): FloorData {
       rarity: randomInt(1, 100) <= 25 ? 'rare' : 'common',
     }),
   )
+  const events: FloorEventTile[] = Array.from(
+    { length: 1 + Math.floor(floor / 4) },
+    (_, idx) => ({
+      id: `f${floor}-event-${idx}`,
+      pos: findFree(),
+      kind: ['shop', 'altar', 'gamble'][randomInt(0, 2)] as FloorEventKind,
+    }),
+  )
   const exit = findFree()
 
-  return { width, height, walls, enemies, potions, traps, chests, exit }
+  return { width, height, walls, enemies, potions, traps, chests, events, exit }
 }
 
 export function createFloor(floor: number): FloorData {

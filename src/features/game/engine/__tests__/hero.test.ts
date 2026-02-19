@@ -24,6 +24,7 @@ function createRun(overrides: Partial<RunState> = {}): RunState {
       potions: [],
       traps: [],
       chests: [],
+      events: [],
       exit: { x: 2, y: 2 },
     },
     gameOver: false,

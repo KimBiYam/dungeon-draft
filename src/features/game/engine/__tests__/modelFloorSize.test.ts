@@ -82,6 +82,7 @@ describe('createFloor map size randomization', () => {
         ...floor.potions.map((potion) => keyOf(potion)),
         ...floor.traps.map((trap) => keyOf(trap.pos)),
         ...floor.chests.map((chest) => keyOf(chest.pos)),
+        ...floor.events.map((eventTile) => keyOf(eventTile.pos)),
         keyOf(floor.exit),
       ]
       expect(occupied).not.toContain(startKey)

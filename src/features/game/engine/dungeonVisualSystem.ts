@@ -2,6 +2,7 @@ import type Phaser from 'phaser'
 
 import {
   type ChestTile,
+  type FloorEventTile,
   MAX_MAP_H,
   MAX_MAP_W,
   clamp,
@@ -38,10 +39,12 @@ export class DungeonVisualSystem {
   private enemyGroup?: Phaser.GameObjects.Group
   private potionGroup?: Phaser.GameObjects.Group
   private chestGroup?: Phaser.GameObjects.Group
+  private eventGroup?: Phaser.GameObjects.Group
   private exitOrb?: Phaser.GameObjects.Container
   private enemyVisuals = new Map<string, EnemyVisual>()
   private potionVisuals = new Map<string, Phaser.GameObjects.Container>()
   private chestVisuals = new Map<string, Phaser.GameObjects.Container>()
+  private eventVisuals = new Map<string, Phaser.GameObjects.Container>()
   private fogTiles = new Map<string, Phaser.GameObjects.Rectangle>()
 
   constructor(private readonly scene: Phaser.Scene) {}
@@ -86,6 +89,7 @@ export class DungeonVisualSystem {
     this.enemyGroup?.clear(true, true)
     this.potionGroup?.clear(true, true)
     this.chestGroup?.clear(true, true)
+    this.eventGroup?.clear(true, true)
     if (this.exitOrb) {
       this.scene.tweens.killTweensOf(this.exitOrb)
       this.scene.tweens.killTweensOf(this.exitOrb.list)
@@ -95,6 +99,7 @@ export class DungeonVisualSystem {
     this.enemyVisuals.clear()
     this.potionVisuals.clear()
     this.chestVisuals.clear()
+    this.eventVisuals.clear()
     this.fogTiles.forEach((tile) => tile.destroy())
     this.fogTiles.clear()
 
@@ -102,6 +107,7 @@ export class DungeonVisualSystem {
     this.enemyGroup = this.scene.add.group()
     this.potionGroup = this.scene.add.group()
     this.chestGroup = this.scene.add.group()
+    this.eventGroup = this.scene.add.group()
 
     for (let y = 0; y < run.floorData.height; y++) {
       for (let x = 0; x < run.floorData.width; x++) {
@@ -128,6 +134,11 @@ export class DungeonVisualSystem {
       const chestVisual = this.createChestVisual(chest)
       this.chestGroup.add(chestVisual)
       this.chestVisuals.set(keyOf(chest.pos), chestVisual)
+    }
+    for (const eventTile of run.floorData.events) {
+      const eventVisual = this.createEventVisual(eventTile)
+      this.eventGroup.add(eventVisual)
+      this.eventVisuals.set(keyOf(eventTile.pos), eventVisual)
     }
 
     const exitOrb = this.createPortalVisual(run.floorData.exit)
@@ -222,6 +233,16 @@ export class DungeonVisualSystem {
     this.scene.tweens.killTweensOf(visual.list)
     visual.destroy()
     this.chestVisuals.delete(key)
+  }
+
+  consumeEventVisual(pos: Pos) {
+    const key = keyOf(pos)
+    const visual = this.eventVisuals.get(key)
+    if (!visual) return
+    this.scene.tweens.killTweensOf(visual)
+    this.scene.tweens.killTweensOf(visual.list)
+    visual.destroy()
+    this.eventVisuals.delete(key)
   }
 
   tweenPlayerTo(pos: Pos, onUpdate: () => void) {
@@ -463,6 +484,41 @@ export class DungeonVisualSystem {
       repeat: -1,
       ease: 'Sine.InOut',
     })
+    return container
+  }
+
+  private createEventVisual(eventTile: FloorEventTile) {
+    const x = eventTile.pos.x * TILE + TILE / 2
+    const y = eventTile.pos.y * TILE + TILE / 2
+    const styleByKind = {
+      shop: { fill: 0x1d4ed8, stroke: 0x93c5fd, symbol: '$' },
+      altar: { fill: 0x7f1d1d, stroke: 0xfca5a5, symbol: '+' },
+      gamble: { fill: 0x365314, stroke: 0xb9f99d, symbol: '?' },
+    }[eventTile.kind]
+
+    const base = this.scene.add.circle(0, 0, 11, styleByKind.fill, 0.9)
+    base.setStrokeStyle(2, styleByKind.stroke, 0.9)
+    const label = this.scene.add.text(0, 0, styleByKind.symbol, {
+      color: '#f8fafc',
+      fontFamily: 'monospace',
+      fontSize: '13px',
+    })
+    label.setOrigin(0.5)
+    const glow = this.scene.add.circle(0, 0, 15, styleByKind.stroke, 0.18)
+
+    const container = this.scene.add.container(x, y, [glow, base, label])
+    container.setDepth(2)
+    container.setSize(24, 24)
+    container.setPosition(x, y)
+    this.scene.tweens.add({
+      targets: glow,
+      alpha: { from: 0.12, to: 0.32 },
+      duration: 700,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.InOut',
+    })
+
     return container
   }
 }
