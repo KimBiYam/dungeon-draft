@@ -13,11 +13,10 @@ import { RunLifecycleService } from './runLifecycleService'
 import { SceneEffects } from './sceneEffects'
 import { TurnResolver } from './turnResolver'
 import { LootService } from './lootService'
+import { PlayerMoveResolver } from './playerMoveResolver'
 import {
   type HeroClassId,
-  keyOf,
   randomInt,
-  samePos,
   type RunState,
 } from './model'
 import { MonsterRoleService } from './monster'
@@ -70,6 +69,16 @@ export function createDungeonSceneFactory(
     private readonly visuals = new DungeonVisualSystem(this)
     private readonly effects = new SceneEffects(this, Phaser)
     private readonly turnResolver = new TurnResolver(randomInt)
+    private readonly playerMoveResolver = new PlayerMoveResolver({
+      turnResolver: this.turnResolver,
+      heroRole: this.heroRole,
+      terrainRole: this.terrainRole,
+      visuals: this.visuals,
+      effects: this.effects,
+      playAudio: this.audio.play.bind(this.audio),
+      pushLog: this.pushLog.bind(this),
+      lootService: this.lootService,
+    })
     private readonly enemyPhaseResolver = new EnemyPhaseResolver(
       this.monsterRole,
       this.monsterCatalog,
@@ -163,86 +172,52 @@ export function createDungeonSceneFactory(
       const moving = dx !== 0 || dy !== 0
 
       if (moving) {
-        if (
-          target.x < 0 ||
-          target.y < 0 ||
-          target.x >= this.run.floorData.width ||
-          target.y >= this.run.floorData.height
-        ) {
-          return
-        }
-        if (this.run.floorData.walls.has(keyOf(target))) {
-          this.pushLog('Blocked by stone wall.')
-          this.audio.play('wallBlocked')
-          this.effects.cameraShake(90)
-          return
-        }
-
-        const enemyCollision = this.turnResolver.resolveEnemyCollision({
-          run: this.run,
+        const moveResult = this.playerMoveResolver.resolve(
+          this.run,
           target,
-          heroRole: this.heroRole,
-          visuals: this.visuals,
-          playOnceThen: this.effects.playOnceThen.bind(this.effects),
-          playAudio: this.audio.play.bind(this.audio),
-          pushLog: this.pushLog.bind(this),
-          hitFlash: this.effects.hitFlash.bind(this.effects),
-          cameraShake: this.effects.cameraShake.bind(this.effects),
-        })
-        if (!enemyCollision.handled) {
-          this.run.player = target
-          const isExit = samePos(target, this.run.floorData.exit)
-          const eventIdx = this.run.floorData.events.findIndex((tile) =>
-            samePos(tile.pos, target),
+          this.portalResonanceUsed,
+        )
+        this.portalResonanceUsed = moveResult.portalResonanceUsed
+
+        if (moveResult.status === 'out_of_bounds' || moveResult.status === 'blocked') {
+          return
+        }
+
+        if (moveResult.status === 'trap_death') {
+          this.triggerGameOver(`You were slain by a trap on floor ${this.run.floor}.`)
+          this.pushState()
+          return
+        }
+
+        if (moveResult.status === 'event') {
+          this.visuals.tweenPlayerTo(
+            moveResult.target,
+            () => {
+              this.visuals.updatePlayerHpBar(this.run)
+              this.visuals.updateVision(this.run)
+            },
+            () => {
+              this.floorEventFlow.offer(moveResult.tile)
+              this.pushState()
+            },
           )
-          const tileEffects = this.turnResolver.resolveTileEffects({
-            run: this.run,
-            target,
-            terrainRole: this.terrainRole,
-            playAudio: this.audio.play.bind(this.audio),
-            pushLog: this.pushLog.bind(this),
-            triggerTrapFlash: this.effects.trapHitFlash.bind(this.effects),
-            cameraShake: this.effects.cameraShake.bind(this.effects),
-            visuals: this.visuals,
-            applyTrapEffect: this.lootService.applyTrapEffect.bind(this.lootService),
-            applyChestReward: this.lootService.applyChestReward.bind(this.lootService, this.run),
-            portalResonanceUsed: this.portalResonanceUsed,
-          })
-          this.portalResonanceUsed = tileEffects.portalResonanceUsed
-          if (tileEffects.diedByTrap) {
-            this.triggerGameOver(`You were slain by a trap on floor ${this.run.floor}.`)
-            this.pushState()
-            return
-          }
-          if (eventIdx >= 0) {
-            const tile = this.run.floorData.events[eventIdx]
-            this.visuals.tweenPlayerTo(
-              target,
-              () => {
-                this.visuals.updatePlayerHpBar(this.run)
-                this.visuals.updateVision(this.run)
-              },
-              () => {
-                this.floorEventFlow.offer(tile)
-                this.pushState()
-              },
-            )
-            return
-          }
+          return
+        }
 
-          if (isExit) {
-            this.visuals.killPlayerTweens()
-            this.runLifecycle.descendFloor(this.run)
-            this.pushLog(`Descended to floor ${this.run.floor}.`)
-            this.audio.play('descendFloor')
-            this.portalResonanceUsed = false
-            this.floorEventFlow.clear()
-            this.visuals.rebuildFloorObjects(this.run)
-            this.pushState()
-            return
-          }
+        if (moveResult.status === 'exit') {
+          this.visuals.killPlayerTweens()
+          this.runLifecycle.descendFloor(this.run)
+          this.pushLog(`Descended to floor ${this.run.floor}.`)
+          this.audio.play('descendFloor')
+          this.portalResonanceUsed = false
+          this.floorEventFlow.clear()
+          this.visuals.rebuildFloorObjects(this.run)
+          this.pushState()
+          return
+        }
 
-          this.visuals.tweenPlayerTo(target, () => {
+        if (moveResult.status === 'moved') {
+          this.visuals.tweenPlayerTo(moveResult.target, () => {
             this.visuals.updatePlayerHpBar(this.run)
             this.visuals.updateVision(this.run)
           })
