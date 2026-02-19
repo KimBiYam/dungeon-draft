@@ -13,6 +13,12 @@ interface FloorEventOptionStrategy {
   apply: (run: RunState, roll: Roll) => string
 }
 
+interface FloorEventStrategy {
+  readonly kind: FloorEventKind
+  createChoices(): FloorEventChoice[]
+  applyChoice(run: RunState, choiceId: string, roll: Roll): string | null
+}
+
 class FloorEventOption implements FloorEventOptionStrategy {
   constructor(
     public readonly choice: FloorEventChoice,
@@ -24,8 +30,30 @@ class FloorEventOption implements FloorEventOptionStrategy {
   }
 }
 
-const FLOOR_EVENT_OPTIONS: Record<FloorEventKind, FloorEventOptionStrategy[]> = {
-  shop: [
+abstract class BaseFloorEventStrategy implements FloorEventStrategy {
+  abstract readonly kind: FloorEventKind
+  protected abstract readonly options: FloorEventOptionStrategy[]
+
+  createChoices() {
+    return this.options.map((entry) => ({
+      id: entry.choice.id,
+      title: entry.choice.title,
+      description: entry.choice.description,
+    }))
+  }
+
+  applyChoice(run: RunState, choiceId: string, roll: Roll) {
+    const option = this.options.find((entry) => entry.choice.id === choiceId)
+    if (!option) {
+      return null
+    }
+    return option.apply(run, roll)
+  }
+}
+
+class ShopFloorEventStrategy extends BaseFloorEventStrategy {
+  readonly kind = 'shop' as const
+  protected readonly options: FloorEventOptionStrategy[] = [
     new FloorEventOption(
       {
         id: 'shop-harden',
@@ -62,8 +90,12 @@ const FLOOR_EVENT_OPTIONS: Record<FloorEventKind, FloorEventOptionStrategy[]> = 
         return 'You stock up and recover 10 HP.'
       },
     ),
-  ],
-  altar: [
+  ]
+}
+
+class AltarFloorEventStrategy extends BaseFloorEventStrategy {
+  readonly kind = 'altar' as const
+  protected readonly options: FloorEventOptionStrategy[] = [
     new FloorEventOption(
       {
         id: 'altar-blood',
@@ -100,8 +132,12 @@ const FLOOR_EVENT_OPTIONS: Record<FloorEventKind, FloorEventOptionStrategy[]> = 
         return 'You offer memory and gain 14 XP.'
       },
     ),
-  ],
-  gamble: [
+  ]
+}
+
+class GambleFloorEventStrategy extends BaseFloorEventStrategy {
+  readonly kind = 'gamble' as const
+  protected readonly options: FloorEventOptionStrategy[] = [
     new FloorEventOption(
       {
         id: 'gamble-dice',
@@ -140,26 +176,27 @@ const FLOOR_EVENT_OPTIONS: Record<FloorEventKind, FloorEventOptionStrategy[]> = 
       },
       () => 'You decide not to gamble.',
     ),
-  ],
+  ]
 }
 
 export class FloorEventService {
+  private readonly strategies = new Map<FloorEventKind, FloorEventStrategy>([
+    ['shop', new ShopFloorEventStrategy()],
+    ['altar', new AltarFloorEventStrategy()],
+    ['gamble', new GambleFloorEventStrategy()],
+  ])
+
   constructor(private readonly roll: Roll) {}
 
   createChoices(kind: FloorEventKind): FloorEventChoice[] {
-    return FLOOR_EVENT_OPTIONS[kind].map((entry) => ({
-      id: entry.choice.id,
-      title: entry.choice.title,
-      description: entry.choice.description,
-    }))
+    return this.strategies.get(kind)?.createChoices() ?? []
   }
 
   applyChoice(run: RunState, kind: FloorEventKind, choiceId: string) {
-    const option = FLOOR_EVENT_OPTIONS[kind].find((entry) => entry.choice.id === choiceId)
-    if (!option) {
+    const strategy = this.strategies.get(kind)
+    if (!strategy) {
       return null
     }
-
-    return option.apply(run, this.roll)
+    return strategy.applyChoice(run, choiceId, this.roll)
   }
 }
