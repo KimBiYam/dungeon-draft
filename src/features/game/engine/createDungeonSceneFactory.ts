@@ -325,8 +325,17 @@ export function createDungeonSceneFactory(
           }
           if (eventIdx >= 0) {
             const tile = this.run.floorData.events[eventIdx]
-            this.offerFloorEventChoices(tile)
-            this.pushState()
+            this.visuals.tweenPlayerTo(
+              target,
+              () => {
+                this.visuals.updatePlayerHpBar(this.run)
+                this.visuals.updateVision(this.run)
+              },
+              () => {
+                this.offerFloorEventChoices(tile)
+                this.pushState()
+              },
+            )
             return
           }
 

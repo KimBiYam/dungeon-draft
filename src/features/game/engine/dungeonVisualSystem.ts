@@ -224,7 +224,7 @@ export class DungeonVisualSystem {
     this.eventVisuals.delete(key)
   }
 
-  tweenPlayerTo(pos: Pos, onUpdate: () => void) {
+  tweenPlayerTo(pos: Pos, onUpdate: () => void, onComplete?: () => void) {
     if (!this.playerSprite) return
     this.scene.tweens.add({
       targets: this.playerSprite,
@@ -233,7 +233,10 @@ export class DungeonVisualSystem {
       duration: 110,
       ease: 'Quad.Out',
       onStart: () => this.playerSprite?.play(getHeroWalkAnimKey(this.currentHeroClass), true),
-      onComplete: () => this.playerSprite?.play(getHeroIdleAnimKey(this.currentHeroClass), true),
+      onComplete: () => {
+        this.playerSprite?.play(getHeroIdleAnimKey(this.currentHeroClass), true)
+        onComplete?.()
+      },
       onUpdate,
     })
   }
@@ -565,8 +568,11 @@ export class DungeonVisualSystem {
   private createEventVisual(eventTile: FloorEventTile) {
     const x = eventTile.pos.x * TILE + TILE / 2
     const y = eventTile.pos.y * TILE + TILE / 2
+    if (eventTile.kind === 'shop') {
+      return this.createShopVisual(x, y)
+    }
+
     const styleByKind = {
-      shop: { fill: 0x1d4ed8, stroke: 0x93c5fd, symbol: '$' },
       altar: { fill: 0x7f1d1d, stroke: 0xfca5a5, symbol: '+' },
       gamble: { fill: 0x365314, stroke: 0xb9f99d, symbol: '?' },
     }[eventTile.kind]
@@ -594,6 +600,38 @@ export class DungeonVisualSystem {
       ease: 'Sine.InOut',
     })
 
+    return container
+  }
+
+  private createShopVisual(x: number, y: number) {
+    const awning = this.scene.add.rectangle(0, -7, 22, 6, 0xdc2626, 0.95)
+    awning.setStrokeStyle(1, 0xfca5a5, 0.85)
+    const stall = this.scene.add.rectangle(0, 1, 18, 8, 0x854d0e, 0.95)
+    stall.setStrokeStyle(1, 0xfacc15, 0.75)
+    const merchantHead = this.scene.add.circle(0, -1, 3, 0xfde68a, 0.95)
+    const merchantBody = this.scene.add.rectangle(0, 4, 6, 6, 0x1d4ed8, 0.95)
+    const lantern = this.scene.add.circle(7, -1, 2, 0xfef08a, 0.9)
+    const glow = this.scene.add.circle(0, 0, 16, 0xfacc15, 0.16)
+
+    const container = this.scene.add.container(x, y, [
+      glow,
+      awning,
+      stall,
+      merchantBody,
+      merchantHead,
+      lantern,
+    ])
+    container.setDepth(2)
+    container.setSize(24, 24)
+    container.setPosition(x, y)
+    this.scene.tweens.add({
+      targets: lantern,
+      alpha: { from: 0.5, to: 1 },
+      duration: 600,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.InOut',
+    })
     return container
   }
 }
