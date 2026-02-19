@@ -5,16 +5,14 @@ import { FloorEventService, type FloorEventChoice } from './floorEvent'
 import { HeroRoleService, type LevelUpChoice } from './hero'
 import { InputMapper } from './input'
 import { EnemyPhaseResolver } from './enemyPhaseResolver'
+import { RunLifecycleService } from './runLifecycleService'
 import { TurnResolver } from './turnResolver'
 import {
   type FloorEventTile,
-  START_POS,
   TILE,
   type HeroClassId,
   type TrapKind,
   clamp,
-  createFloor,
-  createInitialRun,
   keyOf,
   randomInt,
   samePos,
@@ -35,7 +33,7 @@ export function createDungeonSceneFactory(
   callbacks: CreateRoguelikeGameOptions,
 ) {
   return class DungeonScene extends Phaser.Scene {
-    private run: RunState = createInitialRun(callbacks.initialHeroClass)
+    private run: RunState
     private uiInputBlocked = false
     private pendingLevelUps = 0
     private activeLevelUpChoices: LevelUpChoice[] | null = null
@@ -46,6 +44,7 @@ export function createDungeonSceneFactory(
     private readonly monsterRole = new MonsterRoleService(randomInt)
     private readonly monsterCatalog = new MonsterTypeCatalog()
     private readonly terrainRole = new TerrainRoleService()
+    private readonly runLifecycle = new RunLifecycleService()
     private readonly floorEventRole = new FloorEventService(randomInt)
     private readonly visuals = new DungeonVisualSystem(this)
     private readonly turnResolver = new TurnResolver(randomInt)
@@ -62,6 +61,7 @@ export function createDungeonSceneFactory(
 
     constructor() {
       super('dungeon')
+      this.run = this.runLifecycle.createNewRun(callbacks.initialHeroClass)
     }
 
     create() {
@@ -84,7 +84,7 @@ export function createDungeonSceneFactory(
 
     newRun(heroClass: HeroClassId) {
       this.heroRole.resetBuildSynergy()
-      this.run = createInitialRun(heroClass)
+      this.run = this.runLifecycle.createNewRun(heroClass)
       this.pendingLevelUps = 0
       this.activeLevelUpChoices = null
       this.activeFloorEventChoices = null
@@ -299,10 +299,7 @@ export function createDungeonSceneFactory(
 
           if (isExit) {
             this.visuals.killPlayerTweens()
-            this.run.floor += 1
-            this.run.player = { ...START_POS }
-            this.run.floorData = createFloor(this.run.floor)
-            this.run.hp = clamp(this.run.hp + 6, 0, this.run.maxHp)
+            this.runLifecycle.descendFloor(this.run)
             this.pushLog(`Descended to floor ${this.run.floor}.`)
             this.audio.play('descendFloor')
             this.portalResonanceUsed = false
@@ -408,11 +405,9 @@ export function createDungeonSceneFactory(
     }
 
     private triggerGameOver(message: string) {
-      if (this.run.gameOver) {
+      if (!this.runLifecycle.markGameOver(this.run)) {
         return
       }
-      this.run.hp = 0
-      this.run.gameOver = true
       this.pushLog(message)
       callbacks.onLevelUpChoices(null)
       callbacks.onFloorEventChoices(null)
