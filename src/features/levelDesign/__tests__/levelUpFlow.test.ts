@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { LevelUpFlow } from '../engine/levelUpFlow'
+import { LevelUpFlow } from '../../core/engine/levelUpFlow'
 import type { LevelUpChoice } from '../../core/engine/hero'
 import type { RunState } from '../../core/engine/model'
 

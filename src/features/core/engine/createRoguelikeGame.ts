@@ -6,7 +6,7 @@ import {
 import { createDungeonSceneFactory } from './createDungeonSceneFactory'
 
 export type { LevelUpChoice } from './hero'
-export type { FloorEventChoice } from '../../level/engine/floorEvent'
+export type { FloorEventChoice } from '../../levelDesign/engine/floorEvent'
 export type { HeroClassId, HudState } from './model'
 export type { RoguelikeGameApi } from './contracts'
 

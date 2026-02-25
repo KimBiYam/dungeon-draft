@@ -1,5 +1,5 @@
 import type { CreateRoguelikeGameOptions } from './contracts'
-import type { FloorEventChoice } from '../../level/engine/floorEvent'
+import type { FloorEventChoice } from '../../levelDesign/engine/floorEvent'
 import type { LevelUpChoice } from './hero'
 import { toHud, type RunState } from './model'
 

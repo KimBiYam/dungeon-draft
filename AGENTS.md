@@ -3,7 +3,7 @@
 ## Project Layout (FSD-style)
 - `src/features/core`: Core gameplay, scene orchestration, and shared game stores/UI
 - `src/features/audio`: Audio engine/store/components
-- `src/features/level`: Level-up and floor-event domain/components
+- `src/features/levelDesign`: Level-up and floor-event domain/components
 - `src/shared/ui`: Shared UI components across features
 - `src/widgets`: Feature composition layer
 - `src/pages`: Route-level page components
@@ -31,9 +31,9 @@
   - `src/features/core/engine/enemyPhaseResolver.ts`
   - `src/features/core/engine/runLifecycleService.ts`
 - Progression and events:
-  - `src/features/level/engine/levelUpFlow.ts`
-  - `src/features/level/engine/floorEventFlow.ts`
-  - `src/features/level/engine/floorEvent.ts`
+  - `src/features/levelDesign/engine/levelUpFlow.ts`
+  - `src/features/levelDesign/engine/floorEventFlow.ts`
+  - `src/features/levelDesign/engine/floorEvent.ts`
   - `src/features/core/engine/lootService.ts`
 - Scene wiring/helpers:
   - `src/features/core/engine/sceneInputController.ts`
@@ -48,7 +48,7 @@
 ### Rules for future changes
 - If a file exceeds ~350 lines with mixed concerns, split by responsibility before adding features.
 - New gameplay mechanics should add/extend a service first, then connect from scene factory.
-- Add or update focused unit tests for newly extracted modules under `src/features/core/engine/__tests__`, `src/features/level/__tests__`, or `src/features/audio/__tests__`.
+- Add or update focused unit tests for newly extracted modules under `src/features/core/engine/__tests__`, `src/features/levelDesign/__tests__`, or `src/features/audio/__tests__`.
 - Commit by logical unit (one responsibility change per commit).
 
 ## Testing Rules

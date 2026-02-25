@@ -1,5 +1,5 @@
 import type { LevelUpChoice } from './hero'
-import type { FloorEventChoice } from '../../level/engine/floorEvent'
+import type { FloorEventChoice } from '../../levelDesign/engine/floorEvent'
 import type { HeroClassId, HudState } from './model'
 
 export type CreateRoguelikeGameOptions = {
