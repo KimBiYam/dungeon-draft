@@ -9,6 +9,17 @@
 - `src/pages`: Route-level page components
 - `src/routes`: TanStack file-based route entries (keep these thin)
 
+### Feature Directory Shape
+- `src/features/core/engine`: Main game engine and orchestration
+- `src/features/core/components`: Core game UI shell/canvas/status/modals
+- `src/features/core/store`: Runtime/session/ui shared stores
+- `src/features/audio/engine`: Sound synthesis/pattern logic
+- `src/features/audio/store`: Audio-related store state
+- `src/features/audio/components`: Audio-specific UI
+- `src/features/levelDesign/engine`: Floor event rules/flows
+- `src/features/levelDesign/components`: Level/floor-event choice modals
+- `src/features/*/__tests__`: Domain-focused unit tests by feature
+
 ## Current Game Architecture
 - Entry point: `src/features/core/engine/createRoguelikeGame.ts`
 - Scene factory: `src/features/core/engine/createDungeonSceneFactory.ts`
@@ -30,8 +41,8 @@
   - `src/features/core/engine/playerMoveResolver.ts`
   - `src/features/core/engine/enemyPhaseResolver.ts`
   - `src/features/core/engine/runLifecycleService.ts`
+  - `src/features/core/engine/levelUpFlow.ts`
 - Progression and events:
-  - `src/features/levelDesign/engine/levelUpFlow.ts`
   - `src/features/levelDesign/engine/floorEventFlow.ts`
   - `src/features/levelDesign/engine/floorEvent.ts`
   - `src/features/core/engine/lootService.ts`
