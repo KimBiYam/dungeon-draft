@@ -1,4 +1,4 @@
-import { clampVolume } from '../engine/audio'
+import { clampVolume } from '../../audio/engine/audio'
 import type { RoguelikeGameApi } from '../engine/createRoguelikeGame'
 
 export function applyUiInputBlocked(

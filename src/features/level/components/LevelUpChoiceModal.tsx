@@ -1,5 +1,5 @@
-import { useRuntimeStore } from '../store/runtimeStore'
-import { useSessionStore } from '../store/sessionStore'
+import { useRuntimeStore } from '../../core/store/runtimeStore'
+import { useSessionStore } from '../../core/store/sessionStore'
 
 function getTagLabel(tag: string) {
   if (tag === 'offense') return { label: 'OFFENSE', tone: 'text-rose-200 border-rose-300/50 bg-rose-500/10' }

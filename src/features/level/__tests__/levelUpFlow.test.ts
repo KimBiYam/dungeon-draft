@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { LevelUpFlow } from '../levelUpFlow'
-import type { LevelUpChoice } from '../hero'
-import type { RunState } from '../model'
+import { LevelUpFlow } from '../engine/levelUpFlow'
+import type { LevelUpChoice } from '../../core/engine/hero'
+import type { RunState } from '../../core/engine/model'
 
 function createRun(overrides: Partial<RunState> = {}): RunState {
   return {

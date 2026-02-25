@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-import type { AudioStoreState } from './types'
+import type { AudioStoreState } from '../../core/store/types'
 
 export const useAudioStore = create<AudioStoreState>((set, get) => ({
   audioMuted: false,

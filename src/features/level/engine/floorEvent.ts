@@ -1,4 +1,4 @@
-import { clamp, type FloorEventKind, type RunState } from './model'
+import { clamp, type FloorEventKind, type RunState } from '../../core/engine/model'
 
 type Roll = (min: number, max: number) => number
 

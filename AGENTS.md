@@ -1,22 +1,22 @@
 # AGENTS Guide
 
 ## Project Layout (FSD-style)
-- `src/features/game/engine`: Phaser game engine and domain logic
-- `src/features/game/components`: Game-specific UI components
-- `src/features/game/hooks`: Game-specific React hooks
+- `src/features/core`: Core gameplay, scene orchestration, and shared game stores/UI
+- `src/features/audio`: Audio engine/store/components
+- `src/features/level`: Level-up and floor-event domain/components
 - `src/shared/ui`: Shared UI components across features
 - `src/widgets`: Feature composition layer
 - `src/pages`: Route-level page components
 - `src/routes`: TanStack file-based route entries (keep these thin)
 
 ## Current Game Architecture
-- Entry point: `src/features/game/engine/createRoguelikeGame.ts`
-- Scene factory: `src/features/game/engine/createDungeonSceneFactory.ts`
-- Rendering system: `src/features/game/engine/dungeonVisualSystem.ts`
+- Entry point: `src/features/core/engine/createRoguelikeGame.ts`
+- Scene factory: `src/features/core/engine/createDungeonSceneFactory.ts`
+- Rendering system: `src/features/core/engine/dungeonVisualSystem.ts`
 - Role services:
-  - `src/features/game/engine/hero.ts`
-  - `src/features/game/engine/monster.ts`
-  - `src/features/game/engine/input.ts`
+  - `src/features/core/engine/hero.ts`
+  - `src/features/core/engine/monster.ts`
+  - `src/features/core/engine/input.ts`
 
 ## Refactoring Direction (SOLID)
 - Keep `createDungeonSceneFactory.ts` as an orchestration layer only.
@@ -26,29 +26,29 @@
 
 ### Current split modules (engine)
 - Turn and lifecycle:
-  - `src/features/game/engine/turnResolver.ts`
-  - `src/features/game/engine/playerMoveResolver.ts`
-  - `src/features/game/engine/enemyPhaseResolver.ts`
-  - `src/features/game/engine/runLifecycleService.ts`
+  - `src/features/core/engine/turnResolver.ts`
+  - `src/features/core/engine/playerMoveResolver.ts`
+  - `src/features/core/engine/enemyPhaseResolver.ts`
+  - `src/features/core/engine/runLifecycleService.ts`
 - Progression and events:
-  - `src/features/game/engine/levelUpFlow.ts`
-  - `src/features/game/engine/floorEventFlow.ts`
-  - `src/features/game/engine/floorEvent.ts`
-  - `src/features/game/engine/lootService.ts`
+  - `src/features/level/engine/levelUpFlow.ts`
+  - `src/features/level/engine/floorEventFlow.ts`
+  - `src/features/level/engine/floorEvent.ts`
+  - `src/features/core/engine/lootService.ts`
 - Scene wiring/helpers:
-  - `src/features/game/engine/sceneInputController.ts`
-  - `src/features/game/engine/runNotifier.ts`
-  - `src/features/game/engine/sceneEffects.ts`
+  - `src/features/core/engine/sceneInputController.ts`
+  - `src/features/core/engine/runNotifier.ts`
+  - `src/features/core/engine/sceneEffects.ts`
 - Rendering split:
-  - `src/features/game/engine/dungeonVisualSystem.ts`
-  - `src/features/game/engine/dungeonObjectVisualFactory.ts`
-  - `src/features/game/engine/enemyVisualRegistry.ts`
-  - `src/features/game/engine/fogOfWarRenderer.ts`
+  - `src/features/core/engine/dungeonVisualSystem.ts`
+  - `src/features/core/engine/dungeonObjectVisualFactory.ts`
+  - `src/features/core/engine/enemyVisualRegistry.ts`
+  - `src/features/core/engine/fogOfWarRenderer.ts`
 
 ### Rules for future changes
 - If a file exceeds ~350 lines with mixed concerns, split by responsibility before adding features.
 - New gameplay mechanics should add/extend a service first, then connect from scene factory.
-- Add or update focused unit tests for newly extracted modules under `src/features/game/engine/__tests__`.
+- Add or update focused unit tests for newly extracted modules under `src/features/core/engine/__tests__`, `src/features/level/__tests__`, or `src/features/audio/__tests__`.
 - Commit by logical unit (one responsibility change per commit).
 
 ## Testing Rules
@@ -59,9 +59,9 @@
   4. Re-run tests and type-check
 - Keep tests under `__tests__` per directory.
 - Current engine tests:
-  - `src/features/game/engine/__tests__/hero.test.ts`
-  - `src/features/game/engine/__tests__/monster.test.ts`
-  - `src/features/game/engine/__tests__/input.test.ts`
+  - `src/features/core/engine/__tests__/hero.test.ts`
+  - `src/features/core/engine/__tests__/monster.test.ts`
+  - `src/features/core/engine/__tests__/input.test.ts`
 
 ## Commands
 - Use Node from `.nvmrc`:

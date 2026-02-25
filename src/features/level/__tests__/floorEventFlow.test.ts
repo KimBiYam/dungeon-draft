@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { FloorEventFlow } from '../floorEventFlow'
-import type { FloorEventChoice } from '../floorEvent'
-import type { RunState } from '../model'
+import { FloorEventFlow } from '../engine/floorEventFlow'
+import type { FloorEventChoice } from '../engine/floorEvent'
+import type { RunState } from '../../core/engine/model'
 
 function createRun(overrides: Partial<RunState> = {}): RunState {
   return {

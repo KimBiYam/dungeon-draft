@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import type { RunState } from '../model'
-import { FloorEventService } from '../floorEvent'
+import type { RunState } from '../../core/engine/model'
+import { FloorEventService } from '../engine/floorEvent'
 
 function createRun(overrides: Partial<RunState> = {}): RunState {
   return {

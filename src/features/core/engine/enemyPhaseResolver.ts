@@ -1,6 +1,6 @@
 import type Phaser from 'phaser'
 
-import type { SfxEvent } from './audio'
+import type { SfxEvent } from '../../audio/engine/audio'
 import type { DungeonVisualSystem } from './dungeonVisualSystem'
 import { keyOf, samePos, type Pos, type RunState } from './model'
 import { MonsterRoleService } from './monster'

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { clampVolume, createSfxPattern } from '../audio'
+import { clampVolume, createSfxPattern } from '../engine/audio'
 
 describe('createSfxPattern', () => {
   it('returns meaningful steps for combat and progression events', () => {

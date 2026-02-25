@@ -1,5 +1,5 @@
-import { useRuntimeStore } from '../store/runtimeStore'
-import { useSessionStore } from '../store/sessionStore'
+import { useRuntimeStore } from '../../core/store/runtimeStore'
+import { useSessionStore } from '../../core/store/sessionStore'
 
 export function FloorEventChoiceModal() {
   const choices = useSessionStore((state) => state.floorEventChoices)

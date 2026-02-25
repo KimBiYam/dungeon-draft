@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import { useUiStore } from '../store/uiStore'
-import { AudioControls } from './AudioControls'
+import { AudioControls } from '../../audio/components/AudioControls'
 import { HelpModal } from './HelpModal'
 
 export function StatusPanelHeader() {

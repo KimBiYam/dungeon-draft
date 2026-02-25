@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-import { useAudioStore } from '../store/audioStore'
+import { useAudioStore } from '../../audio/store/audioStore'
 import { useRuntimeStore } from '../store/runtimeStore'
 import { applyAudioSettings, applyUiInputBlocked } from '../store/storeHelpers'
 import { useUiStore } from '../store/uiStore'

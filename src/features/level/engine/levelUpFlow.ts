@@ -1,6 +1,6 @@
-import type { HeroClassId, RunState } from './model'
-import type { HeroRoleService, LevelUpChoice } from './hero'
-import type { RunNotifier } from './runNotifier'
+import type { HeroClassId, RunState } from '../../core/engine/model'
+import type { HeroRoleService, LevelUpChoice } from '../../core/engine/hero'
+import type { RunNotifier } from '../../core/engine/runNotifier'
 
 type HeroLevelingService = Pick<
   HeroRoleService,

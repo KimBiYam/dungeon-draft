@@ -1,6 +1,6 @@
 import type { FloorEventChoice, FloorEventService } from './floorEvent'
-import type { FloorEventTile, Pos, RunState } from './model'
-import type { RunNotifier } from './runNotifier'
+import type { FloorEventTile, Pos, RunState } from '../../core/engine/model'
+import type { RunNotifier } from '../../core/engine/runNotifier'
 
 type FloorEventApplier = Pick<FloorEventService, 'createChoices' | 'applyChoice'>
 type FloorEventNotifier = Pick<
